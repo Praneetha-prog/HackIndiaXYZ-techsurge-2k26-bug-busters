@@ -1,0 +1,1873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SevaSetu | Citizen Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tesseract.js OCR Library -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+  <!-- PDF text extraction/rendering and DOCX text extraction for document verification -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://unpkg.com/mammoth@1.8.0/mammoth.browser.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Sans+Telugu:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;600;700&family=Noto+Sans+Kannada:wght@400;600;700&family=Noto+Sans+Malayalam:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', 'Noto Sans Devanagari', 'Noto Sans Telugu', 'Noto Sans Tamil', 'Noto Sans Kannada', 'Noto Sans Malayalam', sans-serif; }
+    .recording-wave { animation: wave 1.2s infinite ease-in-out; }
+    @keyframes wave { 0%, 100% { transform: scaleY(0.4); } 50% { transform: scaleY(1.3); } }
+
+    /* Eligibility Match - added feature only */
+    .eligibility-match {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1d4ed8;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+  <div id="app" class="min-h-screen flex flex-col justify-between">
+    <!-- Navigation Bar -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <a href="index.html" class="w-9 h-9 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-black text-lg shadow-sm">S</a>
+          <div><h1 class="font-extrabold text-slate-900 tracking-tight text-base sm:text-lg" id="navBrand">SevaSetu Portal</h1></div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <div class="flex flex-wrap bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-semibold" id="langSelector">
+            <button onclick="switchLanguage('en')" class="px-2 py-1 rounded-md transition-all text-slate-600 hover:text-slate-900" data-lang="en">English</button>
+            <button onclick="switchLanguage('hi')" class="px-2 py-1 rounded-md transition-all text-slate-600 hover:text-slate-900" data-lang="hi">हिन्दी</button>
+            <button onclick="switchLanguage('te')" class="px-2 py-1 rounded-md transition-all text-slate-600 hover:text-slate-900" data-lang="te">తెలుగు</button>
+            <button onclick="switchLanguage('ta')" class="px-2 py-1 rounded-md transition-all text-slate-600 hover:text-slate-900" data-lang="ta">தமிழ்</button>
+            <button onclick="switchLanguage('kn')" class="px-2 py-1 rounded-md transition-all text-slate-600 hover:text-slate-900" data-lang="kn">ಕನ್ನಡ</button>
+            <button onclick="switchLanguage('ml')" class="px-2 py-1 rounded-md transition-all text-slate-600 hover:text-slate-900" data-lang="ml">മലയാളം</button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="hidden sm:inline text-xs font-bold text-slate-700" id="userDisplayName">Citizen</span>
+            <button onclick="logout()" class="text-xs text-red-600 hover:text-red-700 font-semibold px-2.5 py-1.5 border border-red-200 rounded-lg hover:bg-red-50" id="btnSignOut">Sign Out</button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex-1 w-full">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-6 gap-2 border-b border-slate-200">
+        <div>
+          <a href="index.html" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 mb-1 inline-block" id="linkBack">← Return to Landing Page</a>
+          <h2 class="text-2xl md:text-3xl font-bold text-slate-900" id="headingDeskTitle">Citizen Welfare Evaluation Desk</h2>
+          <p class="text-xs text-slate-500 mt-0.5" id="headingDeskSub">Dictate or select parameters to trigger live deterministic evaluation.</p>
+        </div>
+      </div>
+
+      <!-- Voice Assistant Card -->
+      <div class="my-6 bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-5">
+          <div class="flex items-center gap-4">
+            <button id="btnToggleMic" onclick="toggleRecording()" class="w-14 h-14 rounded-full flex items-center justify-center text-white transition-all shadow-md shrink-0 bg-emerald-600 hover:bg-emerald-700">
+              <svg id="micIconIdle" class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+              </svg>
+              <div id="micIconWave" class="hidden items-center gap-1 h-5">
+                <span class="w-1 bg-white h-3 rounded-full recording-wave"></span>
+                <span class="w-1 bg-white h-5 rounded-full recording-wave" style="animation-delay: 0.2s"></span>
+                <span class="w-1 bg-white h-2 rounded-full recording-wave" style="animation-delay: 0.4s"></span>
+              </div>
+            </button>
+            <div>
+              <h3 class="font-bold text-slate-900 text-sm md:text-base" id="micStatusTitle">Start Voice Assistant</h3>
+              <p class="text-xs text-slate-500 mt-1" id="micStatusSub">Speak your details. When finished, click Stop or pause, and AI will verify mandatory information.</p>
+            </div>
+          </div>
+
+          <button id="btnStopMic" onclick="stopRecording()" class="hidden px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all">Stop & Process Data</button>
+        </div>
+
+        <div id="liveSpeechContainer" class="hidden mt-4 p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-xl text-xs text-slate-800 font-medium">
+          <span class="font-bold text-emerald-800" id="lblDetectedSpeech">Detected Speech:</span> <span id="finalTranscriptText"></span> <span id="interimTranscriptText" class="text-emerald-600 italic underline"></span>
+        </div>
+      </div>
+
+      <!-- Profile Form & Schemes Area -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div class="lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4 h-fit">
+          <div class="pb-3 border-b border-slate-100 flex items-center justify-between">
+            <h3 class="text-base font-bold text-slate-900" id="lblProfileCardTitle">Citizen Profile</h3>
+            <span class="text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold" id="lblLiveEngine">Live Engine</span>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1" id="lblFieldName">Full Legal Name</label>
+            <input type="text" id="inputName" oninput="handleManualFormInput()" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1" id="lblFieldGender">Gender</label>
+              <select id="selectGender" onchange="handleManualFormInput()" class="w-full px-3 py-2 border rounded-lg text-sm bg-white outline-none">
+                <option value="" id="optSelectGender">Select Gender</option>
+                <option value="male" id="optMale">Male</option>
+                <option value="female" id="optFemale">Female</option>
+                <option value="other" id="optOtherGender">Other</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1" id="lblFieldAge">Age (Years)</label>
+              <input type="number" id="inputAge" oninput="handleManualFormInput()" placeholder="e.g. 25" class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1" id="lblFieldCaste">Social Category / Caste</label>
+            <select id="selectCaste" onchange="handleManualFormInput()" class="w-full px-3 py-2 border rounded-lg text-sm bg-white outline-none">
+              <option value="" id="optSelectCaste">Select Category</option>
+              <option value="General" id="optCasteGen">General</option>
+              <option value="OBC" id="optCasteOBC">OBC / BC</option>
+              <option value="SC" id="optCasteSC">SC</option>
+              <option value="ST" id="optCasteST">ST</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1" id="lblFieldOccupation">Occupation</label>
+            <select id="selectOccupation" onchange="handleOccupationSelectChange()" class="w-full px-3 py-2 border rounded-lg text-sm bg-white outline-none">
+              <option value="" id="optSelectOcc">Select Occupation</option>
+              <option value="farmer" id="optOccFarmer">Farmer / Agricultural Worker</option>
+              <option value="student" id="optOccStudent">Student</option>
+              <option value="senior" id="optOccSenior">Elderly / Senior Citizen (60+)</option>
+              <option value="teacher" id="optOccTeacher">Teacher / Faculty / Educator</option>
+              <option value="artisan" id="optOccArtisan">Artisan / Street Vendor</option>
+              <option value="health" id="optOccHealth">Healthcare / ASHA / Anganwadi</option>
+              <option value="unemployed" id="optOccUnemployed">Unemployed / Job Seeker</option>
+              <option value="other" id="optOccOther">Other (General)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1" id="lblFieldIncome">Annual Household Income (₹)</label>
+            <input type="number" id="inputIncome" oninput="handleManualFormInput()" placeholder="e.g. 150000" class="w-full px-3 py-2 border rounded-lg text-sm outline-none" />
+            <span id="studentLockMsg" class="hidden text-[11px] text-emerald-600 font-medium block mt-1">ℹ Income locked to ₹0 for students</span>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1" id="lblFieldState">State / UT</label>
+            <select id="selectState" onchange="handleManualFormInput()" class="w-full px-3 py-2 border rounded-lg text-sm bg-white outline-none">
+              <option value="Telangana" id="optStateTG">Telangana</option>
+              <option value="All India" id="optStateAll">All India / Central Scope</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="lg:col-span-8 space-y-4">
+          <div class="flex items-center justify-between pb-1">
+            <h3 class="text-xl font-bold text-slate-900" id="matchedSchemesCountHeading">Qualifying Schemes (0)</h3>
+            <span class="text-xs text-slate-500 font-medium" id="lblRuleEngine">Deterministic Rule Engine</span>
+          </div>
+
+          <div id="schemesListArea" class="space-y-4"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Autonomous AI Submission Modal -->
+  <div id="submissionModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
+      <div class="flex items-center gap-2 mb-2 text-emerald-700">
+        <span class="text-xl">🤖</span>
+        <h4 class="font-bold text-slate-900 text-base" id="modalSchemeTitle">AI Agent: Confirm Scheme Submission</h4>
+      </div>
+      <p class="text-xs text-slate-600 mb-4 leading-relaxed font-medium" id="modalPromptText">
+        Okay, I'm submitting your application. Please verify your details and uploaded documents once:
+      </p>
+
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 mb-4 text-xs space-y-1.5" id="modalVerificationDetails"></div>
+
+      <div class="flex items-center justify-end gap-3">
+        <button onclick="closeSubmissionModal()" class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl hover:bg-slate-50" id="btnCancelModal">
+          Review Again
+        </button>
+        <button id="btnConfirmSubmit" onclick="executeAutonomousSubmission()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2">
+          Confirm & Submit Application Now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeLang = localStorage.getItem("sevasetu_lang") || "en";
+    let isRecording = false;
+    let recognition = null;
+    let currentModalScheme = null;
+    let silenceTimer = null;
+
+    let profile = {
+      name: "",
+      gender: "",
+      age: "",
+      caste: "",
+      occupation: "",
+      income: "",
+      state: "Telangana"
+    };
+
+    let uploadedDocs = {};
+    let agentReceipts = {};
+
+    // OCR / document-content validation rules
+    // IMPORTANT: A file is NOT accepted just because it contains one generic word.
+    // Each document type now needs multiple document-specific signals.
+    const DOC_VALIDATION_RULES = {
+      aadhaar: {
+        name: "Aadhaar Card",
+        strong: [
+          "aadhaar", "uidai", "unique identification authority",
+          "unique identification", "enrolment no", "enrollment no",
+          "mera aadhaar"
+        ],
+        secondary: [
+          "government of india", "date of birth", "dob", "year of birth",
+          "address", "vid", "male", "female", "help@uidai.gov.in"
+        ],
+        patterns: [
+          /\b\d{4}\s*\d{4}\s*\d{4}\b/,
+          /\b\d{12}\b/
+        ]
+      },
+      land: {
+        name: "Land Ownership Record",
+        strong: [
+          "land ownership", "land record", "record of rights", "ror",
+          "1-b", "1 b", "pattadar", "pattadar passbook", "patta",
+          "survey number", "survey no", "khasra", "khatoni", "pahani"
+        ],
+        secondary: [
+          "land", "ownership", "revenue", "village", "mandal", "district",
+          "extent", "acre", "hectare", "plot", "owner", "khata"
+        ],
+        patterns: [
+          /\bsurvey\s*(?:no|number)?\s*[:\-]?\s*[a-z0-9\/\-]+\b/i,
+          /\b(?:acre|acres|hectare|hectares)\b/i
+        ]
+      },
+      bank: {
+        name: "Bank Passbook",
+        strong: [
+          "ifsc", "account number", "a\/c no", "a\/c number",
+          "passbook", "bank statement", "savings account"
+        ],
+        secondary: [
+          "bank", "branch", "account", "holder", "balance", "deposit",
+          "transaction", "micr", "customer id", "cif"
+        ],
+        patterns: [
+          /\b[A-Z]{4}0[A-Z0-9]{6}\b/i,
+          /\b\d{9,18}\b/
+        ]
+      },
+      caste: {
+        name: "Caste Certificate",
+        strong: [
+          "caste certificate", "community certificate", "caste",
+          "community", "scheduled caste", "scheduled tribe", "backward class",
+          "obc", "sc\/st"
+        ],
+        secondary: [
+          "certificate", "government", "category", "tahsildar", "tehsildar",
+          "revenue", "district", "mandal", "sub caste", "social category"
+        ],
+        patterns: [
+          /\b(?:sc|st|obc)\b/i
+        ]
+      },
+      income: {
+        name: "Income Certificate",
+        strong: [
+          "income certificate", "annual income", "family income",
+          "income", "certificate of income"
+        ],
+        secondary: [
+          "annual", "family", "salary", "rupees", "revenue", "tahsildar",
+          "tehsildar", "financial year", "gross income", "government"
+        ],
+        patterns: [
+          /(?:₹|rs\.?|inr)\s*\d[\d,]*/i,
+          /\b\d[\d,]{3,}\b/
+        ]
+      },
+      marksheet: {
+        name: "Marksheet",
+        strong: [
+          "marksheet", "mark sheet", "statement of marks", "marks",
+          "semester", "examination", "result", "grade card"
+        ],
+        secondary: [
+          "roll", "hall ticket", "board", "university", "institute",
+          "subject", "passed", "percentage", "cgpa", "grade", "course"
+        ],
+        patterns: [
+          /\b(?:\d{1,3}\s*\/\s*\d{1,3}|\d{1,3}%|cgpa\s*[:\-]?\s*\d+(?:\.\d+)?)\b/i
+        ]
+      },
+      receipt: {
+        name: "Admission Receipt",
+        strong: [
+          "admission receipt", "fee receipt", "payment receipt", "receipt",
+          "tuition fee", "fee payment", "challan"
+        ],
+        secondary: [
+          "fee", "payment", "paid", "transaction", "admission", "college",
+          "student", "course", "amount", "receipt no", "transaction id"
+        ],
+        patterns: [
+          /(?:₹|rs\.?|inr)\s*\d[\d,]*/i,
+          /\b(?:receipt|transaction|challan)\s*(?:no|number|id)?\s*[:#-]?\s*[a-z0-9\/-]+\b/i
+        ]
+      },
+      ration: {
+        name: "BPL Ration Card",
+        strong: [
+          "ration card", "food security card", "bpl", "consumer card",
+          "civil supplies", "fair price shop"
+        ],
+        secondary: [
+          "ration", "family head", "consumer", "food security", "member",
+          "household", "district", "village", "card number"
+        ],
+        patterns: [
+          /\b(?:card\s*(?:no|number)|rc\s*no)\s*[:#-]?\s*[a-z0-9\/-]+\b/i
+        ]
+      },
+      vending: {
+        name: "Vending Certificate",
+        strong: [
+          "vending certificate", "street vendor", "certificate of vending",
+          "vendor certificate", "street vending"
+        ],
+        secondary: [
+          "vendor", "vending", "artisan", "ulb", "municipality", "corporation",
+          "identity", "town vending committee", "certificate"
+        ],
+        patterns: [
+          /\b(?:certificate|vendor|vending)\s*(?:no|number|id)?\s*[:#-]?\s*[a-z0-9\/-]+\b/i
+        ]
+      }
+    };
+
+    function normalizeOCRText(text) {
+      return (text || "")
+        .toLowerCase()
+        .replace(/[\u2000-\u206f]/g, " ")
+        .replace(/[\r\n\t]+/g, " ")
+        .replace(/[^a-z0-9₹@.\/%:\-\/ ]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function resolveDocCategory(docName) {
+      const d = (docName || "").toLowerCase();
+
+      // Check the most specific combinations first.
+      if (d.includes("bank") || d.includes("passbook") || d.includes("बैंक") || d.includes("బ్యాంక్") || d.includes("வங்கி") || d.includes("ಬ್ಯಾಂಕ್") || d.includes("ബാങ്ക്")) return "bank";
+      if (d.includes("land") || d.includes("ror") || d.includes("1-b") || d.includes("pattadar") || d.includes("खतौनी") || d.includes("భూమి") || d.includes("நில")) return "land";
+      if (d.includes("caste") || d.includes("जाति") || d.includes("కుల") || d.includes("சாதி") || d.includes("ಜಾತಿ") || d.includes("ജാതി")) return "caste";
+      if (d.includes("income") || d.includes("आय") || d.includes("ఆదాయ") || d.includes("வருமான") || d.includes("ಆದಾಯ") || d.includes("വരുമാന")) return "income";
+      if (d.includes("marksheet") || d.includes("mark sheet") || d.includes("अंकतालिका") || d.includes("మార్కుల") || d.includes("மதிப்பெண்") || d.includes("ಅಂಕಪಟ್ಟಿ") || d.includes("മാർക്ക്")) return "marksheet";
+      if (d.includes("receipt") || d.includes("admission") || d.includes("रसीद") || d.includes("రసీదు") || d.includes("கட்டண") || d.includes("ರಸೀದಿ") || d.includes("രസീത്")) return "receipt";
+      if (d.includes("ration") || d.includes("bpl") || d.includes("राशन") || d.includes("రేషన్") || d.includes("குடும்ப") || d.includes("ಪಡಿತರ") || d.includes("റേഷൻ")) return "ration";
+      if (d.includes("vending") || d.includes("vendor") || d.includes("artisan") || d.includes("विक्रेता") || d.includes("విక్రయ") || d.includes("விற்பனை") || d.includes("ವ್ಯಾಪಾರಿ") || d.includes("കച്ചവട")) return "vending";
+      if (d.includes("aadhaar") || d.includes("आधार") || d.includes("ఆధార్") || d.includes("ஆதார்") || d.includes("ಆಧಾರ್") || d.includes("ആധാർ")) return "aadhaar";
+
+      return null;
+    }
+
+    function scoreDocumentText(text, rule) {
+      const normalized = normalizeOCRText(text);
+      if (!normalized || normalized.length < 25) {
+        return { valid: false, score: 0, strongMatches: [], secondaryMatches: [], patternMatches: 0 };
+      }
+
+      const strongMatches = rule.strong.filter(k => normalized.includes(k.toLowerCase()));
+      const secondaryMatches = rule.secondary.filter(k => normalized.includes(k.toLowerCase()));
+      const patternMatches = (rule.patterns || []).filter(p => p.test(normalized)).length;
+
+      // Require multiple independent signals. A generic word such as "government"
+      // by itself can never make a document valid.
+      const strongEnough = strongMatches.length >= 1;
+      const supportingEnough = secondaryMatches.length >= 1;
+      const structuredEnough = patternMatches >= 1;
+
+      // Some documents can have OCR misses, so two of the three signal groups
+      // are enough, but at least one must be a strong document-specific signal.
+      const valid = strongEnough && (
+        (supportingEnough && structuredEnough) ||
+        (supportingEnough && strongMatches.length >= 2) ||
+        (structuredEnough && strongMatches.length >= 2)
+      );
+
+      const score =
+        Math.min(strongMatches.length, 3) * 35 +
+        Math.min(secondaryMatches.length, 3) * 15 +
+        Math.min(patternMatches, 2) * 20;
+
+      return { valid, score: Math.min(score, 100), strongMatches, secondaryMatches, patternMatches };
+    }
+
+    async function extractPdfTextAndOCR(file) {
+      if (typeof pdfjsLib === "undefined") {
+        throw new Error("PDF engine is unavailable.");
+      }
+
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const maxPages = Math.min(pdf.numPages, 5);
+      let text = "";
+
+      // First try native PDF text extraction.
+      for (let pageNo = 1; pageNo <= maxPages; pageNo++) {
+        const page = await pdf.getPage(pageNo);
+        const content = await page.getTextContent();
+        text += " " + content.items.map(item => item.str || "").join(" ");
+      }
+
+      if (normalizeOCRText(text).length >= 40) {
+        return text;
+      }
+
+      // Scanned PDF: render each page and OCR it.
+      let ocrText = "";
+      for (let pageNo = 1; pageNo <= maxPages; pageNo++) {
+        const page = await pdf.getPage(pageNo);
+        const viewport = page.getViewport({ scale: 1.5 });
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        const result = await Tesseract.recognize(canvas, "eng");
+        ocrText += " " + result.data.text;
+      }
+
+      return ocrText;
+    }
+
+    async function extractDocumentText(file) {
+      const type = (file.type || "").toLowerCase();
+      const name = file.name.toLowerCase();
+
+      if (type.startsWith("image/")) {
+        if (typeof Tesseract === "undefined") throw new Error("OCR engine is unavailable.");
+        const result = await Tesseract.recognize(file, "eng");
+        return result.data.text || "";
+      }
+
+      if (type === "application/pdf" || name.endsWith(".pdf")) {
+        return await extractPdfTextAndOCR(file);
+      }
+
+      if (
+        type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+        name.endsWith(".docx")
+      ) {
+        if (typeof mammoth === "undefined") throw new Error("DOCX reader is unavailable.");
+        const buffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+        return result.value || "";
+      }
+
+      if (name.endsWith(".doc") || type === "application/msword") {
+        throw new Error("Legacy .DOC files are not supported for browser verification. Save the document as PDF or DOCX and upload again.");
+      }
+
+      throw new Error("Unsupported document type.");
+    }
+
+    function updateSchemeUploadStatus(schemeId) {
+      const scheme = SCHEMES_DATABASE.find(x => x.id === schemeId);
+      if (!scheme) return false;
+
+      const docs = scheme.documents.en || [];
+      const allVerified = docs.length > 0 && docs.every(doc => {
+        const key = `${schemeId}_${doc}`;
+        return uploadedDocs[key]?.ready === true && uploadedDocs[key]?.verified === true;
+      });
+
+      uploadedDocs[`SCHEME_${schemeId}_UPLOADED`] = allVerified;
+      return allVerified;
+    }
+
+    const TRANSLATIONS = {
+      en: {
+        brand: "SevaSetu Portal",
+        deskTitle: "Citizen Welfare Evaluation Desk",
+        deskSub: "Dictate or select parameters to trigger live deterministic evaluation.",
+        micIdle: "Start Voice Assistant",
+        micActive: "Listening... (Click 'Stop & Process Data' when done)",
+        micTip: "Speak your details. When finished, click Stop or pause, and AI will verify mandatory information.",
+        stopMic: "Stop & Process Data",
+        detectedSpeech: "Detected Speech:",
+        signOut: "Sign Out",
+        backToHome: "← Return to Landing Page",
+        profileCardTitle: "Citizen Profile",
+        liveEngine: "Live Engine",
+        ruleEngine: "Deterministic Rule Engine",
+        fieldName: "Full Legal Name",
+        fieldGender: "Gender",
+        fieldAge: "Age (Years)",
+        fieldCaste: "Social Category / Caste",
+        fieldOccupation: "Occupation",
+        fieldIncome: "Annual Household Income (₹)",
+        fieldState: "State / UT",
+        selectGender: "Select Gender",
+        selectCaste: "Select Category",
+        selectOcc: "Select Occupation",
+        male: "Male",
+        female: "Female",
+        otherGender: "Other",
+        casteGen: "General",
+        casteOBC: "OBC / BC",
+        casteSC: "SC",
+        casteST: "ST",
+        occFarmer: "Farmer / Agricultural Worker",
+        occStudent: "Student",
+        occSenior: "Elderly / Senior Citizen (60+)",
+        occTeacher: "Teacher / Faculty / Educator",
+        occArtisan: "Artisan / Street Vendor",
+        occHealth: "Healthcare / ASHA / Anganwadi",
+        occUnemployed: "Unemployed / Job Seeker",
+        occOther: "Other (General)",
+        studentAlert: "ℹ Income locked to ₹0 for students",
+        stateTG: "Telangana",
+        stateAll: "All India / Central Scope",
+        qualifyingSchemes: "Qualifying Schemes",
+         eligibilityMatch: "Eligibility Match",
+        benefit: "Benefit",
+        eligibilityCriteria: "Eligibility Criteria",
+        ageReq: "Age Requirement",
+        eligibleOcc: "Eligible Occupations",
+        socialCat: "Social Categories",
+        annualIncomeLimit: "Annual Household Income Limit",
+        jurisdiction: "Jurisdiction Scope",
+        centralScope: "Central & State Scope",
+        mandDoc: "Mandatory Documentation",
+        docUploadedBadge: "✓ Verified Document Uploaded",
+        docPendingBadge: "Pending Document Upload Verification",
+        docs: "REQUIRED DOCUMENTS (PRE-CHECK)",
+        chooseFile: "Choose File",
+        noFileChosen: "No file chosen",
+        readyBadge: "✓ Ready",
+        autoSpec: "Auto specification: PDF/JPG/PNG up to 1 MB",
+        readyFeedback: "Ready: {size}. Please confirm official portal requirements before final submission.",
+        autoSubmitBtn: "🤖 Autonomous AI Application Submission",
+        officialPortal: "Official Application Portal →",
+        dataProvenance: "Data Provenance:",
+        modalTitle: "AI Agent: Confirm Scheme Submission",
+        modalPrompt: "Okay, I'm submitting your application. Please verify your details and uploaded documents once:",
+        confirmBtn: "Confirm & Submit Application Now",
+        reviewAgain: "Review Again",
+        targetScheme: "Target Scheme:",
+        applicant: "Applicant:",
+        attachedDocs: "Attached Verified Documents:",
+        attached: "✓ Attached",
+        pendingUpload: "Pending Upload",
+        submittingStatus: "AI Agent is dispatching verified payload & submitting to portal...",
+        submittedSuccess: "Application Submitted Successfully by AI!",
+        ackNo: "Application Reference ID:",
+        promptMissingPrefix: "Please mention your ",
+        promptMissingSuffix: " and speak again.",
+        askName: "name",
+        askGender: "gender",
+        askAge: "age",
+        askCaste: "caste category",
+        askOccupation: "occupation",
+        askIncome: "income",
+        promptAllDone: "Thank you! All required details are captured.",
+        noSchemes: "No matching schemes found for these parameters.",
+        adjustDetails: "Please adjust your occupation, age, or income details."
+      },
+      hi: {
+        brand: "सेवासेतु पोर्टल",
+        deskTitle: "नागरिक कल्याण योजना मूल्यांकन पटल",
+        deskSub: "योजनाओं की जांच के लिए अपने विवरण बोलें या भरें।",
+        micIdle: "आवाज सहायक शुरू करें",
+        micActive: "सुना जा रहा है... (पूरा होने पर 'रोकें और जांचें' पर क्लिक करें)",
+        micTip: "अपने विवरण बोलें। समाप्त होने पर रोकें या प्रतीक्षा करें, एआई अनिवार्य विवरण की जांच करेगा।",
+        stopMic: "रोकें और जांचें",
+        detectedSpeech: "पहचाने गए शब्द:",
+        signOut: "लॉग आउट",
+        backToHome: "← मुख्य पृष्ठ पर लौटें",
+        profileCardTitle: "नागरिक विवरण",
+        liveEngine: "सक्रिय इंजन",
+        ruleEngine: "नियम आधारित मूल्यांकन",
+        fieldName: "पूरा कानूनी नाम",
+        fieldGender: "लिंग",
+        fieldAge: "आयु (वर्ष)",
+        fieldCaste: "सामाजिक श्रेणी / जाति",
+        fieldOccupation: "व्यवसाय",
+        fieldIncome: "वार्षिक पारिवारिक आय (₹)",
+        fieldState: "राज्य",
+        selectGender: "लिंग चुनें",
+        selectCaste: "श्रेणी चुनें",
+        selectOcc: "व्यवसाय चुनें",
+        male: "पुरुष",
+        female: "महिला",
+        otherGender: "अन्य",
+        casteGen: "सामान्य (General)",
+        casteOBC: "ओबीसी / बीसी (OBC/BC)",
+        casteSC: "एससी (SC)",
+        casteST: "एसटी (ST)",
+        occFarmer: "किसान / खेतिहर मजदूर",
+        occStudent: "छात्र (विद्यार्थी)",
+        occSenior: "वरिष्ठ नागरिक / वृद्ध (60+)",
+        occTeacher: "शिक्षक / प्राध्यापक",
+        occArtisan: "कारीगर / रेहड़ी पटरी विक्रेता",
+        occHealth: "स्वास्थ्य कार्यकर्ता / आशा",
+        occUnemployed: "बेरोजगार / नौकरी तलाशने वाले",
+        occOther: "अन्य (सामान्य)",
+        studentAlert: "ℹ छात्रों के लिए आय स्वतः ₹0 निर्धारित है",
+        stateTG: "तेलंगाना",
+        stateAll: "अखिल भारतीय / केंद्र",
+        qualifyingSchemes: "उपलब्ध पात्र योजनाएं",
+         eligibilityMatch: "पात्रता मिलान",
+        benefit: "योजना लाभ",
+        eligibilityCriteria: "पात्रता मापदंड",
+        ageReq: "आयु सीमा",
+        eligibleOcc: "पात्र व्यवसाय",
+        socialCat: "सामाजिक श्रेणी",
+        annualIncomeLimit: "वार्षिक पारिवारिक आय सीमा",
+        jurisdiction: "क्षेत्राधिकार",
+        centralScope: "केंद्र एवं राज्य दायरा",
+        mandDoc: "अनिवार्य दस्तावेज़",
+        docUploadedBadge: "✓ सत्यापित दस्तावेज़ अपलोड किया गया",
+        docPendingBadge: "दस्तावेज़ अपलोड सत्यापन शेष",
+        docs: "आवश्यक दस्तावेज़ (पूर्व-सत्यापन)",
+        chooseFile: "फ़ाइल चुनें",
+        noFileChosen: "कोई फ़ाइल नहीं चुनी गई",
+        readyBadge: "✓ तैयार",
+        autoSpec: "ऑटो विनिर्देश: PDF/JPG/PNG 1 MB तक",
+        readyFeedback: "तैयार: {size}. अंतिम जमा करने से पहले आधिकारिक पोर्टल आवश्यकताओं की पुष्टि करें।",
+        autoSubmitBtn: "🤖 एआई द्वारा स्वचालित आवेदन जमा करें",
+        officialPortal: "आधिकारिक पोर्टल पर जाएँ →",
+        dataProvenance: "डेटा स्रोत:",
+        modalTitle: "एआई एजेंट: योजना आवेदन की पुष्टि",
+        modalPrompt: "ठीक है, मैं आपका आवेदन जमा कर रहा हूँ। कृपया एक बार अपने दस्तावेज़ और विवरण जांच लें:",
+        confirmBtn: "पुष्टि करें और आवेदन अभी जमा करें",
+        reviewAgain: "पुनः जांचें",
+        targetScheme: "लक्षित योजना:",
+        applicant: "आवेदक:",
+        attachedDocs: "संलग्न सत्यापित दस्तावेज़:",
+        attached: "✓ संलग्न",
+        pendingUpload: "अपलोड शेष",
+        submittingStatus: "एआई एजेंट पोर्टल पर आवेदन जमा कर रहा है...",
+        submittedSuccess: "एआई द्वारा आवेदन सफलतापूर्वक जमा कर दिया गया!",
+        ackNo: "आवेदन संदर्भ संख्या:",
+        promptMissingPrefix: "कृपया अपना ",
+        promptMissingSuffix: " बताएं और पुनः बोलें।",
+        askName: "नाम",
+        askGender: "लिंग",
+        askAge: "आयु",
+        askCaste: "जाति श्रेणी",
+        askOccupation: "व्यवसाय",
+        askIncome: "आय",
+        promptAllDone: "धन्यवाद! सभी आवश्यक विवरण दर्ज कर लिए गए हैं।",
+        noSchemes: "इस व्यवसाय के लिए वर्तमान में कोई पात्र योजना नहीं मिली।",
+        adjustDetails: "कृपया अपनी आयु, आय या व्यवसाय विवरण की पुनः जांच करें।"
+      },
+      te: {
+        brand: "సేవాసేతు పోర్టల్",
+        deskTitle: "సంక్షేమ పథకాల అర్హత పరిశీలన కేంద్రం",
+        deskSub: "మీ వివరాలను మాట్లాడండి లేదా ఫారంలో నమోదు చేయండి.",
+        micIdle: "వాయిస్ అసిస్టెంట్ ప్రారంభించండి",
+        micActive: "వినబడుతోంది... (పూర్తయిన తర్వాత ఆపండి బటన్ నొక్కండి)",
+        micTip: "మీ వివరాలు మాట్లాడండి. ఆపిన తర్వాత వివరాలు అసంపూర్తిగా ఉంటే అసిస్టెంట్ అడుగుతుంది.",
+        stopMic: "ఆపి పరిశీలించండి",
+        detectedSpeech: "గుర్తించిన మాటలు:",
+        signOut: "లాగ్ అవుట్",
+        backToHome: "← హోమ్ పేజీకి వెళ్లండి",
+        profileCardTitle: "పౌర వివరాలు",
+        liveEngine: "లైవ్ ఇంజిన్",
+        ruleEngine: "ఖచ్చితమైన నిబంధనల పరిశీలన",
+        fieldName: "పూర్తి పేరు",
+        fieldGender: "లింగం",
+        fieldAge: "వయస్సు (సంవత్సరాలు)",
+        fieldCaste: "సామాజిక వర్గం / కులం",
+        fieldOccupation: "వృత్తి",
+        fieldIncome: "వార్షిక ఆదాయం (₹)",
+        fieldState: "రాష్ట్రం",
+        selectGender: "లింగం ఎంచుకోండి",
+        selectCaste: "కులం ఎంచుకోండి",
+        selectOcc: "వృత్తి ఎంచుకోండి",
+        male: "పురుషుడు",
+        female: "స్త్రీ",
+        otherGender: "ఇతర",
+        casteGen: "జనరల్",
+        casteOBC: "ఓబీసీ / బీసీ",
+        casteSC: "ఎస్సీ",
+        casteST: "ఎస్టీ",
+        occFarmer: "రైతు / వ్యవసాయ కూలీ",
+        occStudent: "విద్యార్థి",
+        occSenior: "వృద్ధులు / సీనియర్ సిటిజన్లు (60+)",
+        occTeacher: "ఉపాధ్యాయుడు / అధ్యాపకుడు",
+        occArtisan: "చేతివృత్తులు / వీధి వ్యాపారి",
+        occHealth: "ఆరోగ్య కార్యకర్త / ఆశా",
+        occUnemployed: "నిరుద్యోగి / ఉద్యోగార్ధి",
+        occOther: "ఇతర (సాధారణ)",
+        studentAlert: "ℹ విద్యార్థులకు ఆదాయం ₹0 గా పరిగణించబడుతుంది",
+        stateTG: "తెలంగాణ",
+        stateAll: "భారత ప్రభుత్వం / ఇతర",
+        qualifyingSchemes: "మీకు వర్తించే పథకాలు",
+         eligibilityMatch: "అర్హత సరిపోలిక",
+        benefit: "పథకం ప్రయోజనం",
+        eligibilityCriteria: "అర్హత ప్రమాణాలు",
+        ageReq: "వయోపరిమితి",
+        eligibleOcc: "అర్హతగల వృత్తులు",
+        socialCat: "సామాజిక వర్గాలు",
+        annualIncomeLimit: "వార్షిక గరిష్ట ఆదాయ పరిమితి",
+        jurisdiction: "పరిధి",
+        centralScope: "కేంద్ర & రాష్ట్ర పరిధి",
+        mandDoc: "తప్పనిసరి పత్రాలు",
+        docUploadedBadge: "✓ పత్రం విజయవంతంగా అప్‌లోడ్ చేయబడింది",
+        docPendingBadge: "పత్రం అప్‌లోడ్ చేయాల్సి ఉంది",
+        docs: "కావలసిన పత్రాలు (ముందస్తు పరిశీలన)",
+        chooseFile: "ఫైల్ ఎంచుకోండి",
+        noFileChosen: "ఎలాంటి ఫైల్ ఎంచుకోలేదు",
+        readyBadge: "✓ సిద్ధంగా ఉంది",
+        autoSpec: "స్పెసిఫికేషన్: PDF/JPG/PNG 1 MB వరకు",
+        readyFeedback: "సిద్ధం: {size}. తుది దరఖాస్తుకు ముందు అధికారిక పోర్టల్ నిబంధనలను నిర్ధారించుకోండి.",
+        autoSubmitBtn: "🤖 AI ద్వారా ఆటోమేటిక్ దరఖాస్తు సమర్పణ",
+        officialPortal: "అధికారిక వెబ్‌సైట్ →",
+        dataProvenance: "డేటా ప్రామాణికత:",
+        modalTitle: "AI ఏజెంట్: పథకం దరఖాస్తు నిర్ధారణ",
+        modalPrompt: "సరే, నేను మీ దరఖాస్తును సమర్పిస్తున్నాను, దయచేసి ఒకసారి మీ పత్రాలు మరియు వివరాలను సరిచూసుకోండి:",
+        confirmBtn: "నిర్ధారించి దరఖాస్తును సమర్పించండి",
+        reviewAgain: "మళ్లీ పరిశీలించండి",
+        targetScheme: "ఎంచుకున్న పథకం:",
+        applicant: "దరఖాస్తుదారు:",
+        attachedDocs: "జతచేసిన పత్రాలు:",
+        attached: "✓ జతచేయబడింది",
+        pendingUpload: "అప్‌లోడ్ చేయాలి",
+        submittingStatus: "AI ఏజెంట్ మీ పత్రాలను అధికారిక పోర్టల్‌కు సమర్పిస్తోంది...",
+        submittedSuccess: "AI ద్వారా దరఖాస్తు విజయవంతంగా సమర్పించబడింది!",
+        ackNo: "దరఖాస్తు రిఫరెన్స్ సంఖ్య:",
+        promptMissingPrefix: "ఇది తప్పనిసరి. దయచేసి మీ ",
+        promptMissingSuffix: " చెప్పి మళ్లీ మాట్లాడండి.",
+        askName: "పేరు",
+        askGender: "లింగం",
+        askAge: "వయస్సు",
+        askCaste: "సామాజిక వర్గం",
+        askOccupation: "వృత్తి",
+        askIncome: "ఆదాయం",
+        promptAllDone: "ధన్యవాదాలు! అవసరమైన వివరాలన్నీ నమోదయ్యాయి.",
+        noSchemes: "ఈ వివరాలకు సరిపోయే సంక్షేమ పథకాలు ఏవీ లేవు.",
+        adjustDetails: "దయచేసి మీ వయస్సు, ఆదాయం లేదా వృత్తి వివరాలను సరిచూసుకోండి."
+      },
+      ta: {
+        brand: "சேவாசேது தளம்",
+        deskTitle: "குடிமக்கள் நலத்திட்ட தகுதி சரிபார்ப்பு மையம்",
+        deskSub: "திட்டங்களைச் சரிபார்க்க உங்கள் விவரங்களைப் பேசவும் அல்லது உள்ளிடவும்.",
+        micIdle: "குரல் உதவியாளரைத் தொடங்கவும்",
+        micActive: "கேட்கிறது... (முடிந்ததும் நிறுத்தவும்)",
+        micTip: "விவரங்களை பேசவும். விடுபட்ட தகவல்களை அசிஸ்டண்ட் தானாகவே கேட்கும்.",
+        stopMic: "நிறுத்தி மதிப்பிடவும்",
+        detectedSpeech: "கண்டறியப்பட்ட பேச்சு:",
+        signOut: "வெளியேறு",
+        backToHome: "← முதன்மைப் பக்கத்திற்குத் திரும்பு",
+        profileCardTitle: "குடிமக்கள் சுயவிவரம்",
+        liveEngine: "நேரலை இயந்திரம்",
+        ruleEngine: "விதி அடிப்படையிலான தகுதி",
+        fieldName: "முழு சட்டப்பூர்வ பெயர்",
+        fieldGender: "பாலினம்",
+        fieldAge: "வயது (ஆண்டுகள்)",
+        fieldCaste: "சமூகப் பிரிவு / சாதி",
+        fieldOccupation: "தொழில்",
+        fieldIncome: "ஆண்டு வருமானம் (₹)",
+        fieldState: "மாநிலம்",
+        selectGender: "பாலினத்தை தேர்வு செய்யவும்",
+        selectCaste: "பிரிவை தேர்வு செய்யவும்",
+        selectOcc: "தொழிலை தேர்வு செய்யவும்",
+        male: "ஆண்",
+        female: "பெண்",
+        otherGender: "மற்றவை",
+        casteGen: "பொது",
+        casteOBC: "ஓபிசி / பிசி",
+        casteSC: "எஸ்சி",
+        casteST: "எஸ்டி",
+        occFarmer: "விவசாயி / விவசாயத் தொழிலாளி",
+        occStudent: "மாணவர்",
+        occSenior: "முதியோர் (60+)",
+        occTeacher: "ஆசிரியர்",
+        occArtisan: "கைவினைஞர் / வியாபாரி",
+        occHealth: "சுகாதார பணியாளர்",
+        occUnemployed: "வேலையில்லாதவர்",
+        occOther: "மற்றவை",
+        studentAlert: "ℹ மாணவர்களுக்கு வருமானம் ₹0 ஆக நிர்ணயிக்கப்பட்டுள்ளது",
+        stateTG: "தெலுங்கானா",
+        stateAll: "அகில இந்திய / மத்திய அரசு",
+        qualifyingSchemes: "தகுதியான நலத்திட்டங்கள்",
+         eligibilityMatch: "தகுதி பொருத்தம்",
+        benefit: "திட்ட நன்மை",
+        eligibilityCriteria: "தகுதி வரம்புகள்",
+        ageReq: "வயது வரம்பு",
+        eligibleOcc: "தகுதியான தொழில்கள்",
+        socialCat: "சமூகப் பிரிவுகள்",
+        annualIncomeLimit: "ஆண்டு குடும்ப வருமான வரம்பு",
+        jurisdiction: "செயல் எல்லை",
+        centralScope: "மத்திய & மாநில அரசு",
+        mandDoc: "கட்டாய ஆவணங்கள்",
+        docUploadedBadge: "✓ ஆவணம் பதிவேற்றப்பட்டது",
+        docPendingBadge: "ஆவண பதிவேற்றம் நிலுவையில் உள்ளது",
+        docs: "தேவையான ஆவணங்கள் (முன் சரிபார்ப்பு)",
+        chooseFile: "கோப்பைத் தேர்ந்தெடுக்கவும்",
+        noFileChosen: "எந்தக் கோப்பும் தேர்ந்தெடுக்கப்படவில்லை",
+        readyBadge: "✓ தயார்",
+        autoSpec: "விவரக்குறிப்பு: PDF/JPG/PNG 1 MB வரை",
+        readyFeedback: "தயார்: {size}. சமர்ப்பிப்பதற்கு முன் அதிகாரப்பூர்வ வலைத்தள தேவைகளை உறுதிப்படுத்தவும்.",
+        autoSubmitBtn: "🤖 AI தானியங்கி விண்ணப்ப சமர்ப்பிப்பு",
+        officialPortal: "அதிகாரப்பூர்வ இணையதளம் →",
+        dataProvenance: "தரவு ஆதாரம்:",
+        modalTitle: "AI முகவர்: விண்ணப்ப உறுதிப்படுத்தல்",
+        modalPrompt: "சரி, நான் விண்ணப்பத்தை சமர்ப்பிக்கிறேன். உங்கள் ஆவணங்கள் மற்றும் விவரங்களை ஒருமுறை சரிபார்க்கவும்:",
+        confirmBtn: "உறுதிசெய்து விண்ணப்பிக்கவும்",
+        reviewAgain: "மீண்டும் சரிபார்க்கவும்",
+        targetScheme: "தேர்ந்தெடுக்கப்பட்ட திட்டம்:",
+        applicant: "விண்ணப்பதாரர்:",
+        attachedDocs: "இணைக்கப்பட்ட ஆவணங்கள்:",
+        attached: "✓ இணைக்கப்பட்டது",
+        pendingUpload: "பதிவேற்ற வேண்டும்",
+        submittingStatus: "AI முகவர் விண்ணப்பத்தை சமர்ப்பிக்கிறது...",
+        submittedSuccess: "AI மூலம் விண்ணப்பம் வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது!",
+        ackNo: "விண்ணப்ப குறிப்பு எண்:",
+        promptMissingPrefix: "இது கட்டாயமாகும். தயவுசெய்து உங்கள் ",
+        promptMissingSuffix: " கூறி மீண்டும் பேசவும்.",
+        askName: "பெயர்",
+        askGender: "பாலினம்",
+        askAge: "வயது",
+        askCaste: "சாதி",
+        askOccupation: "தொழில்",
+        askIncome: "வருமானம்",
+        promptAllDone: "நன்றி! விவரங்கள் அனைத்தும் பதிவு செய்யப்பட்டன.",
+        noSchemes: "பொருந்தக்கூடிய நலத்திட்டங்கள் எதுவும் கிடைக்கவில்லை.",
+        adjustDetails: "தயவுசெய்து உங்கள் வயது அல்லது வருமான விவரங்களை மாற்றவும்."
+      },
+      kn: {
+        brand: "ಸೇವಾಸೇತು ಪೋರ್ಟಲ್",
+        deskTitle: "ನಾಗರಿಕ ಕಲ್ಯಾಣ ಯೋಜನೆ ಅರ್ಹತಾ ಪರಿಶೀಲನಾ ವಿಭಾಗ",
+        deskSub: "ಯೋಜನೆಗಳನ್ನು ಪರಿಶೀಲಿಸಲು ನಿಮ್ಮ ವಿವರಗಳನ್ನು ಮಾತನಾಡಿ ಅಥವಾ ನಮೂದಿಸಿ.",
+        micIdle: "ಧ್ವನಿ ಸಹಾಯಕ ಪ್ರಾರಂಭಿಸಿ",
+        micActive: "ಆಲಿಸಲಾಗುತ್ತಿದೆ... (ಮುಗಿದ ನಂತರ ನಿಲ್ಲಿಸಿ)",
+        micTip: "ವಿವರಗಳನ್ನು ಮಾತನಾಡಿ. ಅಗತ್ಯ ಮಾಹಿತಿ ತಪ್ಪಿಹೋದರೆ ಸಹಾಯಕ ಸ್ವತಃ ಕೇಳುತ್ತದೆ.",
+        stopMic: "ನಿಲ್ಲಿಸಿ ಪರಿಶೀಲಿಸಿ",
+        detectedSpeech: "ಗುರುತಿಸಲಾದ ಮಾತುಗಳು:",
+        signOut: "ಲಾಗ್ ಔಟ್",
+        backToHome: "← ಮುಖಪುಟಕ್ಕೆ ಹಿಂತಿರುಗಿ",
+        profileCardTitle: "ನಾಗರಿಕ ಪ್ರೊಫೈಲ್",
+        liveEngine: "ಲೈವ್ ಎಂಜಿನ್",
+        ruleEngine: "ನಿಯಮ ಆಧಾರಿತ ಅರ್ಹತೆ",
+        fieldName: "ಪೂರ್ಣ ಕಾನೂನುಬದ್ಧ ಹೆಸರು",
+        fieldGender: "ಲಿಂಗ",
+        fieldAge: "ವಯಸ್ಸು (ವರ್ಷಗಳು)",
+        fieldCaste: "ಸಾಮಾಜಿಕ ವರ್ಗ / ಜಾತಿ",
+        fieldOccupation: "ಉದ್ಯೋಗ",
+        fieldIncome: "ವಾರ್ಷಿಕ ಆದಾಯ (₹)",
+        fieldState: "ರಾಜ್ಯ",
+        selectGender: "ಲಿಂಗ ಆಯ್ಕೆಮಾಡಿ",
+        selectCaste: "ವರ್ಗ ಆಯ್ಕೆಮಾಡಿ",
+        selectOcc: "ಉದ್ಯೋಗ ಆಯ್ಕೆಮಾಡಿ",
+        male: "ಪುರುಷ",
+        female: "ಮಹಿಳೆ",
+        otherGender: "ಇತರ",
+        casteGen: "ಸಾಮಾನ್ಯ",
+        casteOBC: "ಒಬಿಸಿ / ಬಿಸಿ",
+        casteSC: "ಎಸ್‌ಸಿ",
+        casteST: "ಎಸ್‌ಟಿ",
+        occFarmer: "ರೈತ / ಕೃಷಿ ಕಾರ್ಮಿಕ",
+        occStudent: "ವಿದ್ಯಾರ್ಥಿ",
+        occSenior: "ಹಿರಿಯ ನಾಗರಿಕರು (60+)",
+        occTeacher: "ಶಿಕ್ಷಕರು",
+        occArtisan: "ಕುಶಲಕರ್ಮಿ / ವ್ಯಾಪಾರಿ",
+        occHealth: "ಆರೋಗ್ಯ ಕಾರ್ಯಕರ್ತೆ",
+        occUnemployed: "ನಿರುದ್ಯೋಗಿ",
+        occOther: "ಇತರ",
+        studentAlert: "ℹ ವಿದ್ಯಾರ್ಥಿಗಳಿಗೆ ಆದಾಯ ₹0 ಎಂದು ನಿಗದಿಪಡಿಸಲಾಗಿದೆ",
+        stateTG: "ತೆಲಂಗಾಣ",
+        stateAll: "ಅಖಿಲ ಭಾರತ / ಕೇಂದ್ರ",
+        qualifyingSchemes: "ಲಭ್ಯವಿರುವ ಅರ್ಹ ಯೋಜನೆಗಳು",
+         eligibilityMatch: "ಅರ್ಹತೆ ಹೊಂದಾಣಿಕೆ",
+        benefit: "ಯೋಜನೆಯ ಪ್ರಯೋಜನ",
+        eligibilityCriteria: "ಅರ್ಹತಾ ಮಾನದಂಡಗಳು",
+        ageReq: "ವಯಸ್ಸಿನ ಮಿತಿ",
+        eligibleOcc: "ಅರ್ಹ ಉದ್ಯೋಗಗಳು",
+        socialCat: "ಸಾಮಾಜಿಕ ವರ್ಗಗಳು",
+        annualIncomeLimit: "ವಾರ್ಷಿಕ ಆದಾಯ ಮಿತಿ",
+        jurisdiction: "ವ್ಯಾಪ್ತಿ",
+        centralScope: "ಕೇಂದ್ರ ಮತ್ತು ರಾಜ್ಯ ವ್ಯಾಪ್ತಿ",
+        mandDoc: "ಕಡ್ಡಾಯ ದಾಖಲೆಗಳು",
+        docUploadedBadge: "✓ ದಾಖಲೆ ಯಶಸ್ವಿಯಾಗಿ ಅಪ್‌ಲೋಡ್ ಆಗಿದೆ",
+        docPendingBadge: "ದಾಖಲೆ ಅಪ್‌ಲೋಡ್ ಬಾಕಿ ಇದೆ",
+        docs: "ಅಗತ್ಯ ದಾಖಲೆಗಳು (ಪೂರ್ವ ಪರಿಶೀಲನೆ)",
+        chooseFile: "ಫೈಲ್ ಆಯ್ಕೆಮಾಡಿ",
+        noFileChosen: "ಯಾವುದೇ ಫೈಲ್ ಆಯ್ಕೆಯಾಗಿಲ್ಲ",
+        readyBadge: "✓ ಸಿದ್ಧವಾಗಿದೆ",
+        autoSpec: "ಸ್ಫೆಸಿಫಿಕೇಶನ್: PDF/JPG/PNG 1 MB ವರೆಗೆ",
+        readyFeedback: "ಸಿದ್ಧವಾಗಿದೆ: {size}. ಅಂತಿಮ ಸಲ್ಲಿಕೆಗೆ ಮುನ್ನ ಅಧಿಕೃತ ಪೋರ್ಟಲ್ ಅವಶ್ಯಕತೆಗಳನ್ನು ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಿ.",
+        autoSubmitBtn: "🤖 AI ಮೂಲಕ ಸ್ವಯಂಚಾಲಿತ ಅರ್ಜಿ ಸಲ್ಲಿಕೆ",
+        officialPortal: "ಅಧಿಕೃತ ವೆಬ್‌ಸೈಟ್ →",
+        dataProvenance: "ಮಾಹಿತಿಯ ಮೂಲ:",
+        modalTitle: "AI ಏಜೆಂಟ್: ಅರ್ಜಿ ಸಲ್ಲಿಕೆ ದೃಢೀಕರಣ",
+        modalPrompt: "ಸರಿ, ನಾನು ನಿಮ್ಮ ಅರ್ಜಿಯನ್ನು ಸಲ್ಲಿಸುತ್ತಿದ್ದೇನೆ, ದಯವಿಟ್ಟು ಒಮ್ಮೆ ನಿಮ್ಮ ದಾಖಲೆಗಳನ್ನು ಪರಿಶೀಲಿಸಿ:",
+        confirmBtn: "ದೃಢೀಕರಿಸಿ ಮತ್ತು ಸಲ್ಲಿಸಿ",
+        reviewAgain: "ಮತ್ತೆ ಪರಿಶೀಲಿಸಿ",
+        targetScheme: "ಆಯ್ಕೆಮಾಡಿದ ಯೋಜನೆ:",
+        applicant: "ಅರ್ಜಿದಾರರು:",
+        attachedDocs: "ಲಗತ್ತಿಸಲಾದ ದಾಖಲೆಗಳು:",
+        attached: "✓ ಲಗತ್ತಿಸಲಾಗಿದೆ",
+        pendingUpload: "ಅಪ್‌ಲೋಡ್ ಬಾಕಿ",
+        submittingStatus: "AI ಏಜೆಂಟ್ ನಿಮ್ಮ ಅರ್ಜಿಯನ್ನು ಅಧಿಕೃತ ಪೋರ್ಟಲ್‌ಗೆ ಸಲ್ಲಿಸುತ್ತಿದೆ...",
+        submittedSuccess: "AI ಮೂಲಕ ಅರ್ಜಿಯನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಸಲ್ಲಿಸಲಾಗಿದೆ!",
+        ackNo: "ಅರ್ಜಿ ಉಲ್ಲೇಖ ಸಂಖ್ಯೆ:",
+        promptMissingPrefix: "ದಯವಿಟ್ಟು ನಿಮ್ಮ ",
+        promptMissingSuffix: " ತಿಳಿಸಿ ಮತ್ತೆ ಮಾತನಾಡಿ.",
+        askName: "ಹೆಸರು",
+        askGender: "ಲಿಂಗ",
+        askAge: "ವಯಸ್ಸು",
+        askCaste: "ಜಾತಿ",
+        askOccupation: "ಉದ್ಯೋಗ",
+        askIncome: "ಆದಾಯ",
+        promptAllDone: "ಧನ್ಯವಾದಗಳು! ಎಲ್ಲಾ ವಿವರಗಳು ದಾಖಲಾಗಿವೆ.",
+        noSchemes: "ಯಾವುದೇ ಹೊಂದಾಣಿಕೆಯ ಯೋಜನೆಗಳು ಕಂಡುಬಂದಿಲ್ಲ.",
+        adjustDetails: "ದಯವಿಟ್ಟು ನಿಮ್ಮ ವಯಸ್ಸು ಅಥವಾ ಆದಾಯವನ್ನು ಪರಿಶೀಲಿಸಿ."
+      },
+      ml: {
+        brand: "സേവാസേതു പോർട്ടൽ",
+        deskTitle: "പൗരക്ഷേമ പദ്ധതി അർഹതാ പരിശോധനാ കേന്ദ്രം",
+        deskSub: "പദ്ധതികൾ കണ്ടെത്തുന്നതിന് വിവരങ്ങൾ സംസാരിക്കുകയോ നൽകുകയോ ചെയ്യുക.",
+        micIdle: "വോയ്‌സ് അസിസ്റ്റന്റ് ആരംഭിക്കുക",
+        micActive: "ശ്രദ്ധിക്കുന്നു... (പൂർത്തിയായ ശേഷം നിർത്തുക)",
+        micTip: "വിവരങ്ങൾ സംസാരിക്കുക. വിവരങ്ങൾ അപൂർണ്ണമാണെങ്കിൽ അസിസ്റ്റന്റ് ചോദിക്കും.",
+        stopMic: "നിർത്തി പരിശോധിക്കുക",
+        detectedSpeech: "തിരിച്ചറിഞ്ഞ വാക്കുകൾ:",
+        signOut: "ലോഗ് ഔട്ട്",
+        backToHome: "← ഹോം പേജിലേക്ക് മടങ്ങുക",
+        profileCardTitle: "പൗര വിവരങ്ങൾ",
+        liveEngine: "ലൈവ് എഞ്ചിൻ",
+        ruleEngine: "നിയമാധിഷ്ഠിത പരിശോധന",
+        fieldName: "പൂർണ്ണമായ പേര്",
+        fieldGender: "ലിംഗഭേദം",
+        fieldAge: "വയസ്സ് (വർഷം)",
+        fieldCaste: "സാമൂഹിക വിഭാഗം / ജാതി",
+        fieldOccupation: "തൊഴിൽ",
+        fieldIncome: "വാർഷിക വരുമാനം (₹)",
+        fieldState: "സംസ്ഥാനം",
+        selectGender: "ലിംഗം തിരഞ്ഞെടുക്കുക",
+        selectCaste: "വിഭാഗം തിരഞ്ഞെടുക്കുക",
+        selectOcc: "തൊഴിൽ തിരഞ്ഞെടുക്കുക",
+        male: "പുരുഷൻ",
+        female: "സ്ത്രീ",
+        otherGender: "മറ്റുള്ളവ",
+        casteGen: "ജനറൽ",
+        casteOBC: "ഒ.ബി.സി / ബി.സി",
+        casteSC: "എസ്.സി",
+        casteST: "എസ്.ടി",
+        occFarmer: "കർഷകൻ",
+        occStudent: "വിദ്യാർത്ഥി",
+        occSenior: "മുതിർന്ന പൗരന്മാർ (60+)",
+        occTeacher: "അധ്യാപകൻ",
+        occArtisan: "കരകൗശലത്തൊഴിലാളി",
+        occHealth: "ആരോഗ്യ പ്രവർത്തകർ",
+        occUnemployed: "തൊഴിൽരഹിതർ",
+        occOther: "മറ്റുള്ളവ",
+        studentAlert: "ℹ വിദ്യാർത്ഥികൾക്ക് വരുമാനം ₹0 ആയി നിജപ്പെടുത്തിയിരിക്കുന്നു",
+        stateTG: "തെലങ്കാന",
+        stateAll: "അഖിലേന്ത്യാ തലം / കേന്ദ്രം",
+        qualifyingSchemes: "അർഹതയുള്ള പദ്ധതികൾ",
+         eligibilityMatch: "അർഹത പൊരുത്തം",
+        benefit: "പദ്ധതി ആനുകൂല്യം",
+        eligibilityCriteria: "അർഹതാ മാനദണ്ഡങ്ങൾ",
+        ageReq: "പ്രായപരിധി",
+        eligibleOcc: "അർഹമായ തൊഴിലുകൾ",
+        socialCat: "സാമൂഹിക വിഭാഗങ്ങൾ",
+        annualIncomeLimit: "വാർഷിക കുടുംബ വരുമാന പരിധി",
+        jurisdiction: "പരിധി",
+        centralScope: "കേന്ദ്ര & സംസ്ഥാന തലം",
+        mandDoc: "നിർബന്ധിത രേഖകൾ",
+        docUploadedBadge: "✓ രേഖ അപ്‌ലോഡ് ചെയ്തു",
+        docPendingBadge: "രേഖ അപ്‌ലോഡ് ബാക്കിയാണ്",
+        docs: "ആവശ്യമായ രേഖകൾ (മുൻകൂർ പരിശോധന)",
+        chooseFile: "ഫയൽ തിരഞ്ഞെടുക്കുക",
+        noFileChosen: "ഫയലുകൾ ഒന്നും തിരഞ്ഞെടുത്തിട്ടില്ല",
+        readyBadge: "✓ തയ്യാറാണ്",
+        autoSpec: "സ്പെസിഫിക്കേഷൻ: PDF/JPG/PNG 1 MB വരെ",
+        readyFeedback: "തയ്യാറാണ്: {size}. അന്തിമ സമർപ്പണത്തിന് മുമ്പ് ഔദ്യോഗിക പോർട്ടൽ ആവശ്യകതകൾ ഉറപ്പാക്കുക.",
+        autoSubmitBtn: "🤖 AI സ്വയമേവ അപേക്ഷ സമർപ്പിക്കൽ",
+        officialPortal: "ഔദ്യോഗിക വെബ്സൈറ്റ് →",
+        dataProvenance: "ഡാറ്റ ഉറവിടം:",
+        modalTitle: "AI ഏജന്റ്: അപേക്ഷ സ്ഥിരീകരണം",
+        modalPrompt: "ശരി, ഞാൻ നിങ്ങളുടെ അപേക്ഷ സമർപ്പിക്കുന്നു, ദയവായി നിങ്ങളുടെ രേഖകൾ ഒരിക്കൽ കൂടി പരിശോധിക്കുക:",
+        confirmBtn: "സ്ഥിരീകരിച്ച് അപേക്ഷ സമർപ്പിക്കുക",
+        reviewAgain: "വീണ്ടും പരിശോധിക്കുക",
+        targetScheme: "തിരഞ്ഞെടുത്ത പദ്ധതി:",
+        applicant: "അപേക്ഷകൻ:",
+        attachedDocs: "ലഭ്യമാക്കിയ രേഖകൾ:",
+        attached: "✓ നൽകി",
+        pendingUpload: "നൽകാൻ ബാക്കി",
+        submittingStatus: "AI ഏജന്റ് അപേക്ഷ സമർപ്പിക്കുന്നു...",
+        submittedSuccess: "AI വഴി അപേക്ഷ വിജയകരമായി സമർപ്പിച്ചു!",
+        ackNo: "അപേക്ഷാ റഫറൻസ് നമ്പർ:",
+        promptMissingPrefix: "ദയവായി നിങ്ങളുടെ ",
+        promptMissingSuffix: " പറഞ്ഞു വീണ്ടും സംസാരിക്കുക.",
+        askName: "പേര്",
+        askGender: "ലിംഗഭേദം",
+        askAge: "വയസ്സ്",
+        askCaste: "ജാതി",
+        askOccupation: "തൊഴിൽ",
+        askIncome: "വരുമാനം",
+        promptAllDone: "നന്ദി! വിവരങ്ങൾ രേഖപ്പെടുത്തി.",
+        noSchemes: "പദ്ധതികൾ ഒന്നും ലഭ്യമല്ല.",
+        adjustDetails: "വിവരങ്ങൾ വീണ്ടും പരിശോധിക്കുക."
+      }
+    };
+
+    const SCHEMES_DATABASE = [
+      {
+        id: "PM-KISAN",
+        allowedOccupations: ["farmer"],
+        minAge: 18, maxAge: 100,
+        allowedGenders: ["male", "female", "other"],
+        allowedCastes: ["General", "OBC", "SC", "ST"],
+        maxIncome: 400000,
+        dept: {
+          en: "Ministry of Agriculture & Farmers Welfare",
+          hi: "कृषि एवं किसान कल्याण मंत्रालय",
+          te: "వ్యవసాయ మరియు రైతు సంక్షేమ మంత్రిత్వ శాఖ",
+          ta: "விவசாயம் மற்றும் உழவர் நல அமைச்சகம்",
+          kn: "ಕೃಷಿ ಮತ್ತು ರೈತರ ಕಲ್ಯಾಣ ಸಚಿವಾಲಯ",
+          ml: "കൃഷി, കർഷക ക്ഷേമ മന്ത്രാലയം"
+        },
+        name: {
+          en: "PM-Kisan Samman Nidhi",
+          hi: "पीएम किसान सम्मान निधि",
+          te: "పీఎం కిసాన్ సమ్మాన్ నిధి",
+          ta: "பிரதம மந்திரி கிசான் சம்மான் நிதி",
+          kn: "ಪಿಎಂ ಕಿಸಾನ್ ಸಮ್ಮಾನ್ ನಿಧಿ",
+          ml: "പി.എം കിസാൻ സമ്മാൻ നിധി"
+        },
+        benefit: {
+          en: "₹6,000 per year direct income support in 3 equal installments.",
+          hi: "प्रति वर्ष ₹6,000 की सीधी आय सहायता 3 समान किस्तों में।",
+          te: "సంవత్సరానికి ₹6,000 ప్రత్యక్ష ఆర్థిక సాయం 3 విడతల్లో జమ.",
+          ta: "ஆண்டுக்கு ₹6,000 நேரடி வருமான உதவி 3 தவணைகளில்.",
+          kn: "ವರ್ಷಕ್ಕೆ ₹6,000 ನೇರ ಆದಾಯ ನೆರವು 3 ಕಂತುಗಳಲ್ಲಿ.",
+          ml: "വർഷത്തിൽ ₹6,000 നേരിട്ടുള്ള സഹായം 3 ഗഡുക്കളായി."
+        },
+        documents: {
+          en: ["Aadhaar Card", "Land Ownership Record (RoR / 1-B)", "Bank Passbook"],
+          hi: ["आधार कार्ड", "भूमि स्वामित्व अभिलेख (खतौनी)", "बैंक पासबुक"],
+          te: ["ఆధార్ కార్డు", "పట్టాదారు పాసుపుస్తకం / 1-B", "బ్యాంక్ ఖాతా పుస్తకం"],
+          ta: ["ஆதார் அட்டை", "நில உரிமை ஆவணம்", "வங்கி கணக்கு புத்தகம்"],
+          kn: ["ಆಧಾರ್ ಕಾರ್ಡ್", "ಆರ್‌ಒಆರ್ / ಪಹಣಿ ಪತ್ರ", "ಬ್ಯಾಂಕ್ ಪಾಸ್‌ಬುಕ್"],
+          ml: ["ആധാർ കാർഡ്", "ഭൂമിയുടെ ഉടമസ്ഥാവകാശ രേഖ", "ബാങ്ക് പാസ്ബുക്ക്"]
+        },
+        url: "https://pmkisan.gov.in",
+        provenance: "data.gov.in/resource/pmkisan-v2026"
+      },
+      {
+        id: "POST-MATRIC",
+        allowedOccupations: ["student"],
+        minAge: 14, maxAge: 35,
+        allowedGenders: ["male", "female", "other"],
+        allowedCastes: ["SC", "ST", "OBC"],
+        maxIncome: 250000,
+        dept: {
+          en: "Ministry of Social Justice & Empowerment",
+          hi: "सामाजिक न्याय एवं अधिकारिता मंत्रालय",
+          te: "సామాజిక న్యాయం మరియు సాధికారత మంత్రిత్వ శాఖ",
+          ta: "சமூக நீதி மற்றும் அதிகாரமளித்தல் அமைச்சகம்",
+          kn: "ಸಾಮಾಜಿಕ ನ್ಯಾಯ ಮತ್ತು ಸಬಲೀಕರಣ ಸಚಿವಾಲಯ",
+          ml: "സാമൂഹിക നീതി ശാക്തീകരണ മന്ത്രാലയം"
+        },
+        name: {
+          en: "Post-Matric Scholarship for SC/ST/OBC Students",
+          hi: "पोस्ट-मैट्रिक छात्रवृत्ति योजना (SC/ST/OBC)",
+          te: "పోస్ట్-మెట్రిక్ స్కాలర్‌షిప్ పథకం (SC/ST/OBC)",
+          ta: "போஸ்ட்-மெட்ரிக் உதவித்தொகை",
+          kn: "ಮೆಟ್ರಿಕ್ ನಂತರದ ವಿದ್ಯಾರ್ಥಿವೇತನ ಯೋಜನೆ",
+          ml: "പോസ്റ്റ്-മെട്രിക് സ്കോളർഷിപ്പ് പദ്ധതി"
+        },
+        benefit: {
+          en: "100% academic tuition reimbursement plus monthly maintenance study allowance.",
+          hi: "100% शिक्षण शुल्क प्रतिपूर्ति एवं मासिक निर्वाह भत्ता।",
+          te: "పూర్తి విద్యా రుసుము రీయింబర్స్‌మెంట్ మరియు నెలవారీ ఉపకార వేతనం.",
+          ta: "முழு கல்விக் கட்டண தள்ளுபடி மற்றும் மாதாந்திர உதவித்தொகை.",
+          kn: "100% ಬೋಧನಾ ಶುಲ್ಕ ಮರುಪಾವತಿ ಮತ್ತು ಮಾಸಿಕ ಭತ್ಯೆ.",
+          ml: "പൂർണ്ണ ട്യൂഷൻ ഫീസ് റീഇംബേഴ്സ്മെന്റും പ്രതിമാസ സ്റ്റൈപ്പന്റും."
+        },
+        documents: {
+          en: ["Caste Certificate", "Income Certificate (<₹2.5L)", "Previous Year Marksheet", "College Admission Receipt"],
+          hi: ["जाति प्रमाण पत्र", "आय प्रमाण पत्र (<₹2.5 लाख)", "अंकतालिका", "कॉलेज शुल्क रसीद"],
+          te: ["కుల ధృవీకరణ పత్రం", "ఆదాయ ధృవీకరణ పత్రం (<₹2.5L)", "మార్కుల జాబితా", "కాలేజీ ఫీజు రసీదు"],
+          ta: ["சாதிச் சான்றிதழ்", "வருமானச் சான்றிதழ்", "மதிப்பெண் பட்டியல்", "கல்லூரி கட்டண ரசீது"],
+          kn: ["ಜಾತಿ ಪ್ರಮಾಣಪತ್ರ", "ಆದಾಯ ಪ್ರಮಾಣಪತ್ರ", "ಅಂಕಪಟ್ಟಿ", "ಶುಲ್ಕ ರಸೀದಿ"],
+          ml: ["ജാതി സർട്ടിഫിക്കറ്റ്", "വരുമാന സർട്ടിഫിക്കറ്റ്", "മാർക്ക് ലിസ്റ്റ്", "ഫീസ് രസീത്"]
+        },
+        url: "https://scholarships.gov.in",
+        provenance: "myscheme.gov.in/schemes/pms-scst"
+      },
+      {
+        id: "IGNOAPS",
+        allowedOccupations: ["senior"],
+        minAge: 60, maxAge: 120,
+        allowedGenders: ["male", "female", "other"],
+        allowedCastes: ["General", "OBC", "SC", "ST"],
+        maxIncome: 200000,
+        dept: {
+          en: "Ministry of Rural Development (NSAP)",
+          hi: "ग्रामीण विकास मंत्रालय (NSAP)",
+          te: "గ్రామీణాభివృద్ధి మంత్రిత్వ శాఖ (NSAP)",
+          ta: "ஊரக வளர்ச்சி அமைச்சகம் (NSAP)",
+          kn: "ಗ್ರಾಮೀಣಾಭಿವೃದ್ಧಿ ಸಚಿವಾಲಯ (NSAP)",
+          ml: "ഗ്രാമവികസന മന്ത്രാലയം (NSAP)"
+        },
+        name: {
+          en: "Indira Gandhi National Old Age Pension Scheme (IGNOAPS)",
+          hi: "इंदिरा गांधी राष्ट्रीय वृद्धावस्था पेंशन योजना",
+          te: "ఇందిరా గాంధీ జాతీయ వృద్ధాప్య పింఛను పథకం",
+          ta: "இந்திரா காந்தி தேசிய முதியோர் ஓய்வூதியத் திட்டம்",
+          kn: "ಇಂದಿರಾ ಗಾಂಧಿ ರಾಷ್ಟ್ರೀಯ ವೃದ್ಧಾಪ್ಯ ವೇತನ ಯೋಜನೆ",
+          ml: "ഇന്ദിരാഗാന്ധി ദേശീയ വാർദ്ധക്യകാല പെൻഷൻ പദ്ധതി"
+        },
+        benefit: {
+          en: "Monthly direct pension up to ₹2,000 for senior citizens below poverty threshold.",
+          hi: "वरिष्ठ नागरिकों के लिए ₹2,000 प्रति माह तक की प्रत्यक्ष पेंशन।",
+          te: "వృద్ధులకు ప్రతి నెలా ₹2,000 వరకు గౌరవ పింఛను ఆర్థిక సాయం.",
+          ta: "மூத்த குடிமக்களுக்கு மாதம் ₹2,000 வரை நேரடி ஓய்வூதியம்.",
+          kn: "ಹಿರಿಯ ನಾಗರಿಕರಿಗೆ ಮಾಸಿಕ ₹2,000 ವರೆಗೆ ನೇರ ವೃದ್ಧಾಪ್ಯ ವೇತನ.",
+          ml: "മുതിർന്ന പൗരന്മാർക്ക് പ്രതിമാസം ₹2,000 പെൻഷൻ."
+        },
+        documents: {
+          en: ["Aadhaar Card", "BPL Ration Card / Income Certificate", "Bank Account Linked to Aadhaar"],
+          hi: ["आधार कार्ड", "बीपीएल राशन कार्ड", "आधार लिंक बैंक खाता"],
+          te: ["ఆధార్ కార్డు", "రేషన్ కార్డు", "బ్యాంక్ ఖాతా"],
+          ta: ["ஆதார் அட்டை", "ரேஷன் அட்டை", "வங்கி கணக்கு"],
+          kn: ["ಆಧಾರ್ ಕಾರ್ಡ್", "ಪಡಿತರ ಚೀಟಿ", "ಬ್ಯಾಂಕ್ ಖಾತೆ"],
+          ml: ["ആധാർ കാർഡ്", "റേഷൻ കാർഡ്", "ബാങ്ക് അക്കൗണ്ട്"]
+        },
+        url: "https://nsap.nic.in",
+        provenance: "myscheme.gov.in/schemes/ignoaps"
+      },
+      {
+        id: "PM-SVANIDHI",
+        allowedOccupations: ["artisan"],
+        minAge: 18, maxAge: 65,
+        allowedGenders: ["male", "female", "other"],
+        allowedCastes: ["General", "OBC", "SC", "ST"],
+        maxIncome: 350000,
+        dept: {
+          en: "Ministry of Housing & Urban Affairs",
+          hi: "आवासन और शहरी कार्य मंत्रालय",
+          te: "పట్టణ వ్యవహారాల మంత్రిత్వ శాఖ",
+          ta: "வீட்டுவசதி மற்றும் நகர்ப்புற விவகாரங்கள் அமைச்சகம்",
+          kn: "ವಸತಿ ಮತ್ತು ನಗರ ವ್ಯವಹಾರಗಳ ಸಚಿವಾಲಯ",
+          ml: "ഭവന, നഗരകാര്യ മന്ത്രാലയം"
+        },
+        name: {
+          en: "PM SVANidhi Micro-Credit for Vendors",
+          hi: "पीएम स्वनिधि स्ट्रीट वेंडर ऋण योजना",
+          te: "పీఎం స్వనిధి వీధి వ్యాపారుల రుణ పథకం",
+          ta: "பிரதம மந்திரி ஸ்வாநிதி திட்டம்",
+          kn: "ಪಿಎಂ ಸ್ವನಿಧಿ ಕಿರು ಸಾಲ ಯೋಜನೆ",
+          ml: "പി.എം സ്വനിധി വായ്പാ പദ്ധതി"
+        },
+        benefit: {
+          en: "Collateral-free working capital loan up to ₹50,000 with 7% interest subsidy.",
+          hi: "बिना गारंटी ₹50,000 तक का कार्यशील ऋण एवं 7% ब्याज सब्सिडी।",
+          te: "పూచీకత్తు లేని ₹50,000 వరకు రుణం మరియు 7% వడ్డీ రాయితీ.",
+          ta: "₹50,000 வரை பிணையமில்லா கடன் மற்றும் 7% வட்டி மானியம்.",
+          kn: "₹50,000 ವರೆಗೆ ಸಾಲ ಮತ್ತು 7% ಬಡ್ಡಿ ಸಬ್ಸಿಡಿ.",
+          ml: "₹50,000 വരെ ഈടില്ലാത്ത വായ്പയും 7% പലിശ സബ്‌സിഡിയും."
+        },
+        documents: {
+          en: ["Urban Local Body (ULB) Vending ID / Artisan Card", "Aadhaar Card", "Bank Passbook"],
+          hi: ["विक्रेता पहचान पत्र / कारीगर कार्ड", "आधार कार्ड", "बैंक खाता विवरण"],
+          te: ["విక్రయ ధృవీకరణ పత్రం", "ఆధార్ కార్డు", "బ్యాంక్ ఖాతా పుస్తకం"],
+          ta: ["விற்பனை அடையாள அட்டை", "ஆதார் அட்டை", "வங்கி கணக்கு புத்தகம்"],
+          kn: ["ಗುರುತಿನ ಚೀಟಿ", "ಆಧಾರ್ ಕಾರ್ಡ್", "ಬ್ಯಾಂಕ್ ಪಾಸ್‌ಬುಕ್"],
+          ml: ["തിരിച്ചറിയൽ കാർഡ്", "ആധാർ കാർഡ്", "ബാങ്ക് പാസ്ബുക്ക്"]
+        },
+        url: "https://pmsvanidhi.mohua.gov.in",
+        provenance: "data.gov.in/resource/svanidhi-2026"
+      }
+    ];
+
+    window.onload = () => {
+      const stored = localStorage.getItem("sevasetu_user");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.name) {
+          profile.name = parsed.name;
+          document.getElementById("userDisplayName").innerText = parsed.name;
+        }
+      }
+      document.getElementById("inputName").value = profile.name;
+      initSpeech();
+      renderUI();
+    };
+
+    function initSpeech() {
+      const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechAPI) return;
+
+      recognition = new SpeechAPI();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onresult = (event) => {
+        let curInterim = "";
+        let fullFinal = "";
+        for (let i = 0; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) fullFinal += event.results[i][0].transcript + " ";
+          else curInterim += event.results[i][0].transcript;
+        }
+
+        document.getElementById("liveSpeechContainer").classList.remove("hidden");
+        document.getElementById("finalTranscriptText").innerText = fullFinal;
+        document.getElementById("interimTranscriptText").innerText = curInterim;
+
+        const liveText = (fullFinal + " " + curInterim).trim();
+        if (liveText) extractEntities(liveText);
+
+        if (silenceTimer) clearTimeout(silenceTimer);
+        silenceTimer = setTimeout(() => {
+          if (isRecording) {
+            checkMissingAndPrompt();
+          }
+        }, 2500);
+      };
+
+      recognition.onerror = () => {};
+      recognition.onend = () => {
+        if (isRecording) {
+          try {
+            const langTags = { en: "en-IN", hi: "hi-IN", te: "te-IN", ta: "ta-IN", kn: "kn-IN", ml: "ml-IN" };
+            recognition.lang = langTags[activeLang] || "en-IN";
+            recognition.start();
+          } catch(e) {
+            resetMicUI();
+          }
+        }
+      };
+    }
+
+    function toggleRecording() {
+      if (isRecording) stopRecording();
+      else startRecording();
+    }
+
+    function startRecording() {
+      if (!recognition) {
+        alert("Speech Recognition requires Google Chrome or Edge.");
+        return;
+      }
+      isRecording = true;
+      document.getElementById("btnToggleMic").className = "w-14 h-14 rounded-full flex items-center justify-center text-white transition-all shadow-md shrink-0 bg-red-500 ring-8 ring-red-100";
+      document.getElementById("micIconIdle").classList.add("hidden");
+      document.getElementById("micIconWave").classList.remove("hidden");
+      document.getElementById("micIconWave").classList.add("flex");
+      document.getElementById("btnStopMic").classList.remove("hidden");
+      document.getElementById("micStatusTitle").innerText = TRANSLATIONS[activeLang].micActive;
+
+      const langTags = { en: "en-IN", hi: "hi-IN", te: "te-IN", ta: "ta-IN", kn: "kn-IN", ml: "ml-IN" };
+      recognition.lang = langTags[activeLang] || "en-IN";
+      try { recognition.start(); } catch(e) {}
+    }
+
+    function resetMicUI() {
+      isRecording = false;
+      if (silenceTimer) clearTimeout(silenceTimer);
+      document.getElementById("btnToggleMic").className = "w-14 h-14 rounded-full flex items-center justify-center text-white transition-all shadow-md shrink-0 bg-emerald-600 hover:bg-emerald-700";
+      document.getElementById("micIconIdle").classList.remove("hidden");
+      document.getElementById("micIconWave").classList.add("hidden");
+      document.getElementById("micIconWave").classList.remove("flex");
+      document.getElementById("btnStopMic").classList.add("hidden");
+      document.getElementById("micStatusTitle").innerText = TRANSLATIONS[activeLang].micIdle;
+    }
+
+    function stopRecording() {
+      resetMicUI();
+      if (recognition) {
+        try { recognition.stop(); } catch(e) {}
+      }
+      checkMissingAndPrompt();
+    }
+
+    function speak(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        const langTags = { en: "en-IN", hi: "hi-IN", te: "te-IN", ta: "ta-IN", kn: "kn-IN", ml: "ml-IN" };
+        u.lang = langTags[activeLang] || "en-IN";
+
+        isSpeaking = true;
+        u.onend = () => { isSpeaking = false; };
+        u.onerror = () => { isSpeaking = false; };
+
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    function checkMissingAndPrompt() {
+      if (isSpeaking) return;
+      const t = TRANSLATIONS[activeLang];
+      const missing = [];
+
+      const nameVal = (document.getElementById("inputName").value || profile.name || "").trim();
+      const genderVal = document.getElementById("selectGender").value || profile.gender;
+      const ageVal = document.getElementById("inputAge").value || profile.age;
+      const casteVal = document.getElementById("selectCaste").value || profile.caste;
+      const occVal = document.getElementById("selectOccupation").value || profile.occupation;
+      const incomeVal = document.getElementById("inputIncome").value !== "" ? document.getElementById("inputIncome").value : profile.income;
+
+      if (!nameVal) missing.push(t.askName);
+      if (!genderVal) missing.push(t.askGender);
+      if (!ageVal) missing.push(t.askAge);
+      if (!casteVal) missing.push(t.askCaste);
+      if (!occVal) missing.push(t.askOccupation);
+      if (occVal !== "student" && (incomeVal === "" || incomeVal === undefined)) {
+        missing.push(t.askIncome);
+      }
+
+      if (missing.length > 0) {
+        const sentence = `${t.promptMissingPrefix}${missing.join(", ")}${t.promptMissingSuffix}`;
+        speak(sentence);
+      } else {
+        speak(t.promptAllDone);
+      }
+    }
+
+    function extractEntities(rawText) {
+      const text = rawText.toLowerCase();
+
+      // 1. Name
+      const nameMatch = text.match(/(?:my name is|name is|i am|मेरा नाम|నా పేరు|పేరు|என் பெயர்|பெயர்|ನನ್ನ ಹೆಸರು|ಹೆಸರು|എന്റെ പേര്|പേര്)\s+([a-zA-Z\u0C00-\u0C7F\u0900-\u097F\u0B80-\u0BFF\u0C80-\u0CFF\u0D00-\u0D7F]+)/i);
+      if (nameMatch && nameMatch[1]) {
+        const rawName = nameMatch[1].trim();
+        const forbidden = ["female", "male", "other", "farmer", "student", "telangana", "ages", "age", "not", "రైతు", "మగ", "స్త్రీ"];
+        if (!forbidden.includes(rawName.toLowerCase())) {
+          profile.name = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+          document.getElementById("inputName").value = profile.name;
+          document.getElementById("userDisplayName").innerText = profile.name;
+        }
+      }
+
+      // 2. Gender
+      if (/\b(female|woman|lady|girl|महिला|స్త్రీ|ఆడ|பெண்|மகிಳೆ|സ്ത്രീ)\b/i.test(text)) {
+        profile.gender = "female";
+        document.getElementById("selectGender").value = "female";
+      } else if (/\b(male|man|boy|पुरुष|పురుషుడు|మగ|ஆண்|ಪುರುಷ|പുരുഷൻ)\b/i.test(text)) {
+        profile.gender = "male";
+        document.getElementById("selectGender").value = "male";
+      }
+
+      // 3. Age
+      const ageMatch = text.match(/(?:age|ages|वय|వయస్సు|సంవత్సరాలు|வயது|ವಯಸ್ಸು|വയസ്സ്)?\s*([0-9\u0C66-\u0C6F\u0966-\u096F]{1,3})\s*(?:years|year|old|वय|సం|సంవత్సరాలు|ವರ್ಷ|வருடம்|വർഷം)?/i);
+      if (ageMatch && ageMatch[1]) {
+        let cleanAgeStr = ageMatch[1];
+        const teDigits = ['౦','౧','౨','౩','౪','౫','౬','౭','౮','౯'];
+        teDigits.forEach((d, idx) => { cleanAgeStr = cleanAgeStr.split(d).join(idx); });
+        const num = parseInt(cleanAgeStr, 10);
+        if (num >= 1 && num <= 115) {
+          profile.age = num;
+          document.getElementById("inputAge").value = num;
+        }
+      }
+
+      // 4. Caste
+      if (/\b(bc|obc|ఓబీసీ|బీసీ|ओबीसी|ஒபிசி|ಒಬಿಸಿ|ബീസി)\b/i.test(text)) {
+        profile.caste = "OBC";
+        document.getElementById("selectCaste").value = "OBC";
+      } else if (/\b(sc|scheduled caste|ఎస్సీ|एससी|எஸ்சி|ಎಸ್ಸಿ|എസ്.സി)\b/i.test(text)) {
+        profile.caste = "SC";
+        document.getElementById("selectCaste").value = "SC";
+      } else if (/\b(st|scheduled tribe|ఎస్టీ|एसटी|எஸ்டி|ಎಸ್ಟಿ|എസ്.ടി)\b/i.test(text)) {
+        profile.caste = "ST";
+        document.getElementById("selectCaste").value = "ST";
+      } else if (/\b(general|open|జనరల్|सामान्य|பொது|ಸಾಮಾನ್ಯ|ജനറൽ)\b/i.test(text)) {
+        profile.caste = "General";
+        document.getElementById("selectCaste").value = "General";
+      }
+
+      // 5. Occupation
+      if (/\b(student|study|college|school|విద్యార్థి|చదువు|छात्र|மாணவர்|ವಿದ್ಯಾರ್ಥಿ|വിദ്യാർത്ഥി)\b/i.test(text)) {
+        profile.occupation = "student";
+        profile.income = 0;
+        document.getElementById("selectOccupation").value = "student";
+        document.getElementById("inputIncome").value = 0;
+        document.getElementById("inputIncome").disabled = true;
+        document.getElementById("studentLockMsg").classList.remove("hidden");
+      } else if (/\b(farmer|agriculture|agri|kisan|రైతు|వ్యవసాయం|किसान|खेती|விவசாயி|ರೈತ|കർഷകൻ)\b/i.test(text)) {
+        profile.occupation = "farmer";
+        document.getElementById("selectOccupation").value = "farmer";
+      } else if (/\b(senior|elderly|old age|వృద్ధులు|పెన్షన్|वृद्ध|ముதியோர்|ವೃದ್ಧ|വയോധിക)\b/i.test(text)) {
+        profile.occupation = "senior";
+        if (!profile.age || profile.age < 60) {
+          profile.age = 62;
+          document.getElementById("inputAge").value = 62;
+        }
+        document.getElementById("selectOccupation").value = "senior";
+      } else if (/\b(teacher|faculty|lecturer|professor|ఉపాధ్యాయుడు|టీచర్|शिक्षक|ஆசிரியர்|ಶಿಕ್ಷಕ|അധ്യാപകൻ)\b/i.test(text)) {
+        profile.occupation = "teacher";
+        document.getElementById("selectOccupation").value = "teacher";
+      } else if (/\b(artisan|vendor|street vendor|వ్యాపారి|అంగడి|व्यापारी|வியாபாரி|ವ್ಯಾಪಾರಿ|കച്ചവട)\b/i.test(text)) {
+        profile.occupation = "artisan";
+        document.getElementById("selectOccupation").value = "artisan";
+      }
+
+      // 6. Income
+      if (profile.occupation !== "student") {
+        if (/\b(income\s*0|zero\s*income|nil|zero|nothing|no income|సున్నా|ఆదాయం లేదు|शून्य)\b/i.test(text)) {
+          profile.income = 0;
+          document.getElementById("inputIncome").value = 0;
+        } else {
+          const lakhMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:lakh|lac|లక్ష|లక్షలు|లాఖ్|लाख|லட்சம்|ಲಕ್ಷ|ലക്ഷം)/i);
+          if (lakhMatch) {
+            profile.income = parseFloat(lakhMatch[1]) * 100000;
+            document.getElementById("inputIncome").value = profile.income;
+          } else {
+            const numMatch = text.match(/(?:income|salary|ఆదాయం|సంపాదన|आय|வருமானம்)?\s*(\b\d{1,7}\b)/i);
+            if (numMatch && numMatch[1]) {
+              const parsed = parseInt(numMatch[1], 10);
+              if (parsed !== Number(profile.age)) {
+                profile.income = parsed;
+                document.getElementById("inputIncome").value = profile.income;
+              }
+            }
+          }
+        }
+      }
+
+      renderUI();
+    }
+
+    function handleOccupationSelectChange() {
+      const occ = document.getElementById("selectOccupation").value;
+      profile.occupation = occ;
+      if (occ === 'student') {
+        profile.income = 0;
+        document.getElementById("inputIncome").value = 0;
+        document.getElementById("inputIncome").disabled = true;
+        document.getElementById("studentLockMsg").classList.remove("hidden");
+      } else {
+        document.getElementById("inputIncome").disabled = false;
+        document.getElementById("studentLockMsg").classList.add("hidden");
+      }
+      renderUI();
+    }
+
+    function handleManualFormInput() {
+      profile.name = document.getElementById("inputName").value;
+      profile.gender = document.getElementById("selectGender").value;
+      profile.age = document.getElementById("inputAge").value ? Number(document.getElementById("inputAge").value) : "";
+      profile.caste = document.getElementById("selectCaste").value;
+      profile.income = document.getElementById("inputIncome").value !== "" ? Number(document.getElementById("inputIncome").value) : "";
+      profile.state = document.getElementById("selectState").value;
+      renderUI();
+    }
+
+    // STRICT document-content verification handler
+    async function handleFileUpload(docKey, schemeId, docName, event) {
+      const file = event.target.files[0];
+      const statusFeedback = document.getElementById(`status_${docKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+      if (!file) return;
+
+      const sizeStr = file.size > 1024 * 1024
+        ? (file.size / (1024 * 1024)).toFixed(1) + " MB"
+        : Math.max(1, Math.round(file.size / 1024)) + " KB";
+
+      const MAX_SIZE = 5 * 1024 * 1024;
+      if (file.size > MAX_SIZE) {
+        if (statusFeedback) {
+          statusFeedback.className = "mt-2.5 pt-2 border-t border-slate-200/60 text-[11px] leading-relaxed text-red-600 font-bold";
+          statusFeedback.innerHTML = `✗ Invalid Document! File is too large. Maximum allowed size is 5 MB.`;
+        }
+        event.target.value = '';
+        delete uploadedDocs[docKey];
+        updateSchemeUploadStatus(schemeId);
+        renderUI();
+        return;
+      }
+
+      if (statusFeedback) {
+        statusFeedback.className = "mt-2.5 pt-2 border-t border-slate-200/60 text-[11px] leading-relaxed text-blue-600 font-semibold";
+        statusFeedback.innerHTML = `🔍 Reading and verifying document contents... Please wait.`;
+      }
+
+      const categoryKey = resolveDocCategory(docName);
+      if (!categoryKey || !DOC_VALIDATION_RULES[categoryKey]) {
+        if (statusFeedback) {
+          statusFeedback.className = "mt-2.5 pt-2 border-t border-slate-200/60 text-[11px] leading-relaxed text-red-600 font-bold";
+          statusFeedback.innerHTML = `✗ Invalid Document! The required document type could not be identified.`;
+        }
+        event.target.value = '';
+        delete uploadedDocs[docKey];
+        updateSchemeUploadStatus(schemeId);
+        return;
+      }
+
+      const rule = DOC_VALIDATION_RULES[categoryKey];
+
+      try {
+        const extractedText = await extractDocumentText(file);
+        const verification = scoreDocumentText(extractedText, rule);
+
+        if (verification.valid) {
+          uploadedDocs[docKey] = {
+            fileName: file.name,
+            sizeStr,
+            ready: true,
+            verified: true,
+            category: categoryKey,
+            confidence: verification.score,
+            verifiedMsg: `✓ Valid ${rule.name} detected (${verification.score}% content match).`
+          };
+
+          updateSchemeUploadStatus(schemeId);
+          renderUI();
+        } else {
+          if (statusFeedback) {
+            statusFeedback.className = "mt-2.5 pt-2 border-t border-slate-200/60 text-[11px] leading-relaxed text-red-600 font-bold";
+            statusFeedback.innerHTML = `✗ Wrong Document! This file does not contain enough ${rule.name}-specific information. Please upload the correct document.`;
+          }
+          event.target.value = '';
+          delete uploadedDocs[docKey];
+          updateSchemeUploadStatus(schemeId);
+        }
+      } catch (err) {
+        console.error("Document verification failed:", err);
+        if (statusFeedback) {
+          statusFeedback.className = "mt-2.5 pt-2 border-t border-slate-200/60 text-[11px] leading-relaxed text-red-600 font-bold";
+          statusFeedback.innerHTML = `✗ Verification failed. ${err.message || "Please upload a clear PDF, JPG, PNG, or DOCX document."}`;
+        }
+        event.target.value = '';
+        delete uploadedDocs[docKey];
+        updateSchemeUploadStatus(schemeId);
+      }
+    }
+
+
+    function promptAutonomousSubmission(schemeId) {
+      const s = SCHEMES_DATABASE.find(x => x.id === schemeId);
+      if (!s) return;
+
+      const allVerified = updateSchemeUploadStatus(schemeId);
+      if (!allVerified) {
+        const t = TRANSLATIONS[activeLang];
+        const missingDocs = (s.documents[activeLang] || s.documents.en).filter(d => {
+          const f = uploadedDocs[`${s.id}_${d}`];
+          return !f?.ready || !f?.verified;
+        });
+        alert(`Cannot submit yet. Please upload and pass verification for: ${missingDocs.join(", ")}`);
+        renderUI();
+        return;
+      }
+
+      currentModalScheme = s;
+
+      const t = TRANSLATIONS[activeLang];
+      document.getElementById("modalSchemeTitle").innerText = t.modalTitle;
+      document.getElementById("modalPromptText").innerText = t.modalPrompt;
+      document.getElementById("btnConfirmSubmit").innerText = t.confirmBtn;
+      document.getElementById("btnCancelModal").innerText = t.reviewAgain;
+
+      const localizedDocs = s.documents[activeLang] || s.documents.en;
+      let docsSummary = localizedDocs.map(d => {
+        const f = uploadedDocs[`${s.id}_${d}`];
+        return `<div class="flex justify-between items-center text-[11px] text-slate-600 py-0.5">
+          <span>• ${d}</span>
+          <span class="${f?.ready ? 'text-emerald-700 font-bold' : 'text-amber-600 italic'}">
+            ${f?.ready ? `${t.attached} (${f.fileName})` : t.pendingUpload}
+          </span>
+        </div>`;
+      }).join('');
+
+      const localizedSchemeName = s.name[activeLang] || s.name.en;
+      document.getElementById("modalVerificationDetails").innerHTML = `
+        <p><strong class="text-slate-800">${t.targetScheme}</strong> ${localizedSchemeName}</p>
+        <p><strong class="text-slate-800">${t.applicant}</strong> ${profile.name || "N/A"} (${t.fieldAge}: ${profile.age || "N/A"})</p>
+        <p><strong class="text-slate-800">${t.fieldIncome}:</strong> ₹${profile.income !== "" ? Number(profile.income).toLocaleString('en-IN') : "0"}</p>
+        <div class="pt-2 border-t border-slate-200 mt-2">
+          <strong class="text-slate-800 block mb-1">${t.attachedDocs}</strong>
+          ${docsSummary}
+        </div>
+      `;
+
+      document.getElementById("submissionModal").classList.remove("hidden");
+      document.getElementById("submissionModal").classList.add("flex");
+    }
+
+    function closeSubmissionModal() {
+      document.getElementById("submissionModal").classList.add("hidden");
+      document.getElementById("submissionModal").classList.remove("flex");
+    }
+
+    function executeAutonomousSubmission() {
+      if (!currentModalScheme) return;
+      const sId = currentModalScheme.id;
+      const btn = document.getElementById("btnConfirmSubmit");
+      btn.disabled = true;
+      btn.innerText = TRANSLATIONS[activeLang].submittingStatus;
+
+      setTimeout(() => {
+        const refNo = `SS-2026-${sId}-${Math.floor(100000 + Math.random() * 900000)}`;
+        agentReceipts[sId] = {
+          submitted: true,
+          refNo: refNo,
+          timestamp: new Date().toLocaleString()
+        };
+        btn.disabled = false;
+        closeSubmissionModal();
+        renderUI();
+      }, 1500);
+    }
+
+    // Calculates a deterministic eligibility match percentage from the
+    // citizen details that were actually provided. This is a match score,
+    // not a statistical prediction or government-issued eligibility accuracy.
+    function calculateEligibilityMatch(s) {
+      const checks = [];
+
+      if (profile.age !== "") {
+        const age = Number(profile.age);
+        const range = Math.max(1, s.maxAge - s.minAge);
+        const midpoint = (s.minAge + s.maxAge) / 2;
+        const ageCloseness = Math.max(0, 1 - (Math.abs(age - midpoint) / (range / 2)));
+        checks.push(ageCloseness);
+      }
+
+      if (profile.gender) checks.push(s.allowedGenders.includes(profile.gender) ? 1 : 0);
+      if (profile.caste) checks.push(s.allowedCastes.includes(profile.caste) ? 1 : 0);
+      if (profile.occupation) checks.push(s.allowedOccupations.includes(profile.occupation) ? 1 : 0);
+
+      if (profile.income !== "") {
+        const income = Number(profile.income);
+        const incomeCloseness = s.maxIncome > 0
+          ? Math.max(0, Math.min(1, 1 - (income / s.maxIncome)))
+          : (income === 0 ? 1 : 0);
+        checks.push(incomeCloseness);
+      }
+
+      if (checks.length === 0) return 0;
+      return Math.round((checks.reduce((sum, value) => sum + value, 0) / checks.length) * 100);
+    }
+
+    function renderUI() {
+      const t = TRANSLATIONS[activeLang];
+
+      document.getElementById("navBrand").innerText = t.brand;
+      document.getElementById("linkBack").innerText = t.backToHome;
+      document.getElementById("headingDeskTitle").innerText = t.deskTitle;
+      document.getElementById("headingDeskSub").innerText = t.deskSub;
+      document.getElementById("btnSignOut").innerText = t.signOut;
+      document.getElementById("lblProfileCardTitle").innerText = t.profileCardTitle;
+      document.getElementById("lblLiveEngine").innerText = t.liveEngine;
+      document.getElementById("lblRuleEngine").innerText = t.ruleEngine;
+      document.getElementById("micStatusTitle").innerText = isRecording ? t.micActive : t.micIdle;
+      document.getElementById("micStatusSub").innerText = t.micTip;
+      document.getElementById("btnStopMic").innerText = t.stopMic;
+      document.getElementById("lblDetectedSpeech").innerText = t.detectedSpeech;
+
+      // Field Labels
+      document.getElementById("lblFieldName").innerText = t.fieldName;
+      document.getElementById("lblFieldGender").innerText = t.fieldGender;
+      document.getElementById("lblFieldAge").innerText = t.fieldAge;
+      document.getElementById("lblFieldCaste").innerText = t.fieldCaste;
+      document.getElementById("lblFieldOccupation").innerText = t.fieldOccupation;
+      document.getElementById("lblFieldIncome").innerText = t.fieldIncome;
+      document.getElementById("lblFieldState").innerText = t.fieldState;
+      document.getElementById("studentLockMsg").innerText = t.studentAlert;
+
+      // Dropdown Options
+      document.getElementById("optSelectGender").innerText = t.selectGender;
+      document.getElementById("optMale").innerText = t.male;
+      document.getElementById("optFemale").innerText = t.female;
+      document.getElementById("optOtherGender").innerText = t.otherGender;
+
+      document.getElementById("optSelectCaste").innerText = t.selectCaste;
+      document.getElementById("optCasteGen").innerText = t.casteGen;
+      document.getElementById("optCasteOBC").innerText = t.casteOBC;
+      document.getElementById("optCasteSC").innerText = t.casteSC;
+      document.getElementById("optCasteST").innerText = t.casteST;
+
+      document.getElementById("optSelectOcc").innerText = t.selectOcc;
+      document.getElementById("optOccFarmer").innerText = t.occFarmer;
+      document.getElementById("optOccStudent").innerText = t.occStudent;
+      document.getElementById("optOccSenior").innerText = t.occSenior;
+      document.getElementById("optOccTeacher").innerText = t.occTeacher;
+      document.getElementById("optOccArtisan").innerText = t.occArtisan;
+      document.getElementById("optOccHealth").innerText = t.occHealth;
+      document.getElementById("optOccUnemployed").innerText = t.occUnemployed;
+      document.getElementById("optOccOther").innerText = t.occOther;
+
+      document.getElementById("optStateTG").innerText = t.stateTG;
+      document.getElementById("optStateAll").innerText = t.stateAll;
+
+      document.querySelectorAll('#langSelector button').forEach(btn => {
+        if (btn.getAttribute('data-lang') === activeLang) {
+          btn.className = "px-2 py-1 rounded-md transition-all bg-white text-emerald-700 shadow-xs font-bold";
+        } else {
+          btn.className = "px-2 py-1 rounded-md transition-all text-slate-600 hover:text-slate-900";
+        }
+      });
+
+      const ageNum = Number(profile.age) || 0;
+      const incNum = Number(profile.income) || 0;
+
+      const matches = SCHEMES_DATABASE.filter(s => {
+        const ageOk = profile.age !== "" ? (ageNum >= s.minAge && ageNum <= s.maxAge) : true;
+        const genOk = profile.gender ? s.allowedGenders.includes(profile.gender) : true;
+        const casteOk = profile.caste ? s.allowedCastes.includes(profile.caste) : true;
+        const occOk = profile.occupation ? s.allowedOccupations.includes(profile.occupation) : true;
+        const incOk = profile.income !== "" ? (incNum <= s.maxIncome) : true;
+        return ageOk && genOk && casteOk && occOk && incOk;
+      }).map(s => ({
+        scheme: s,
+        matchPercent: calculateEligibilityMatch(s)
+      })).sort((a, b) => b.matchPercent - a.matchPercent);
+
+      document.getElementById("matchedSchemesCountHeading").innerText = `${t.qualifyingSchemes} (${matches.length})`;
+      const container = document.getElementById("schemesListArea");
+
+      if (matches.length === 0) {
+        container.innerHTML = `
+          <div class="p-8 sm:p-12 text-center bg-white rounded-2xl border border-slate-200 text-slate-600 shadow-xs space-y-3">
+            <div class="text-4xl">🔍</div>
+            <p class="font-semibold text-base text-slate-800">${t.noSchemes}</p>
+            <p class="text-xs text-slate-500">${t.adjustDetails}</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = matches.map(match => {
+        const s = match.scheme;
+        const matchPercent = match.matchPercent;
+        const hasUploaded = updateSchemeUploadStatus(s.id);
+        const receipt = agentReceipts[s.id];
+        const localizedDept = s.dept[activeLang] || s.dept.en;
+        const localizedName = s.name[activeLang] || s.name.en;
+        const localizedBenefit = s.benefit[activeLang] || s.benefit.en;
+        const localizedDocs = s.documents[activeLang] || s.documents.en;
+
+        const docsHtml = localizedDocs.map((doc) => {
+          const docKey = `${s.id}_${doc}`;
+          const f = uploadedDocs[docKey];
+          const inputId = `file_${docKey.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
+          return `
+            <div class="bg-slate-50/70 border border-slate-200/90 rounded-xl p-3.5 flex flex-col justify-between shadow-2xs">
+              <div>
+                <div class="flex justify-between items-start mb-0.5">
+                  <h5 class="font-bold text-slate-800 text-xs sm:text-[13px]">${doc}</h5>
+                  ${f?.ready ? `<span class="text-emerald-600 font-bold text-xs flex items-center gap-1 shrink-0">${t.readyBadge}</span>` : ''}
+                </div>
+                <p class="text-[11px] text-slate-500 mb-2.5">${t.autoSpec}</p>
+
+                <div class="flex items-center gap-2">
+                  <input type="file" id="${inputId}" class="hidden" accept="image/jpeg,image/png,image/jpg,.pdf,.docx" onchange="handleFileUpload('${docKey}', '${s.id}', '${doc.replace(/'/g, "\\'")}', event)">
+                  <label for="${inputId}" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-3.5 py-1.5 rounded-lg cursor-pointer transition-colors shadow-2xs shrink-0">
+                    ${t.chooseFile}
+                  </label>
+                  <span class="text-xs text-slate-500 truncate max-w-[180px]">${f?.fileName || t.noFileChosen}</span>
+                </div>
+              </div>
+
+              <div id="status_${docKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="mt-2.5 pt-2 border-t border-slate-200/60 text-[11px] leading-relaxed ${f?.ready ? 'text-emerald-700 font-medium' : 'text-slate-500'}">
+                ${f?.ready ? `${f.verifiedMsg} (${f.sizeStr})` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs hover:shadow-md transition-shadow">
+            <div class="flex justify-between items-start gap-4">
+              <div>
+                <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">${localizedDept}</span>
+                <h4 class="text-lg font-bold text-slate-900 mt-1">${localizedName}</h4>
+              </div>
+              <div class="eligibility-match" title="${t.eligibilityMatch}: ${matchPercent}%">
+                ${t.eligibilityMatch}: ${matchPercent}%
+              </div>
+              <button onclick="speak('${localizedName}. ${localizedBenefit}')" class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition-colors">🔊</button>
+            </div>
+
+            <div class="mt-3 bg-emerald-50/70 p-3 rounded-xl border border-emerald-100 text-sm font-medium text-slate-800">
+              🎁 <strong>${t.benefit}:</strong> ${localizedBenefit}
+            </div>
+
+            <div class="mt-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs text-slate-700 leading-relaxed">
+              <strong class="text-slate-900 font-bold uppercase tracking-wider block mb-1.5">📋 ${t.eligibilityCriteria}:</strong>
+              <ul class="list-disc list-inside space-y-1 text-slate-600">
+                <li><strong>${t.ageReq}:</strong> ${s.minAge} - ${s.maxAge}</li>
+                <li><strong>${t.eligibleOcc}:</strong> ${s.allowedOccupations.map(o => t[`occ${o.charAt(0).toUpperCase() + o.slice(1)}`] || o).join(", ")}</li>
+                <li><strong>${t.socialCat}:</strong> ${s.allowedCastes.join(", ")}</li>
+                <li><strong>${t.annualIncomeLimit}:</strong> Up to ₹${Number(s.maxIncome).toLocaleString('en-IN')}</li>
+                <li><strong>${t.jurisdiction}:</strong> ${t.centralScope}</li>
+                <li class="flex items-center gap-1.5 mt-1 pt-1 border-t border-slate-200">
+                  <strong>${t.mandDoc}:</strong>
+                  ${hasUploaded 
+                    ? `<span class="inline-flex items-center gap-1 text-emerald-700 bg-emerald-100 font-bold px-2 py-0.5 rounded text-[11px]">${t.docUploadedBadge}</span>` 
+                    : `<span class="text-amber-700 bg-amber-50 px-2 py-0.5 rounded text-[11px] font-semibold border border-amber-200">${t.docPendingBadge}</span>`}
+                </li>
+              </ul>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100">
+              <p class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5">${t.docs}</p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">${docsHtml}</div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3">
+              ${receipt?.submitted ? `
+                <div class="w-full bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800 flex items-center justify-between flex-wrap gap-2">
+                  <span class="font-bold">✓ ${t.submittedSuccess}</span>
+                  <span>${t.ackNo} <strong class="font-mono text-emerald-950">${receipt.refNo}</strong></span>
+                  <span class="text-emerald-600 text-[11px]">(${receipt.timestamp})</span>
+                </div>
+              ` : `
+                <button onclick="promptAutonomousSubmission('${s.id}')" class="w-full sm:w-auto bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-2">
+                  ${t.autoSubmitBtn}
+                </button>
+              `}
+            </div>
+
+            <div class="mt-3 pt-3 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-2">
+              <span>${t.dataProvenance} <span class="font-mono text-slate-700">${s.provenance}</span></span>
+              <a href="${s.url}" target="_blank" class="text-emerald-600 font-bold hover:underline">${t.officialPortal}</a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function switchLanguage(langCode) {
+      activeLang = langCode;
+      localStorage.setItem("sevasetu_lang", langCode);
+      if (recognition && isRecording) {
+        const langTags = { en: "en-IN", hi: "hi-IN", te: "te-IN", ta: "ta-IN", kn: "kn-IN", ml: "ml-IN" };
+        recognition.lang = langTags[activeLang] || "en-IN";
+      }
+      renderUI();
+    }
+
+    function logout() {
+      localStorage.removeItem("sevasetu_user");
+      window.location.href = "index.html";
+    }
+  </script>
+</body>
+</html>
