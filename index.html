@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SevaSetu | Scheme Discovery</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Devanagari", "Noto Sans Telugu", "Noto Sans Tamil", "Noto Sans Kannada", "Noto Sans Malayalam", sans-serif; }
+    body { background-color: #f8fafc; color: #0f172a; overflow-x: hidden; }
+
+    /* Navbar */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 30px;
+      background: rgba(255, 255, 255, 0.98);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid #e2e8f0;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      gap: 12px;
+    }
+    .brand-logo { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 900; color: #059669; text-decoration: none; white-space: nowrap; }
+    .brand-badge { background: #d1fae5; color: #065f46; font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 700; border: 1px solid #a7f3d0; }
+
+    .nav-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .lang-selector { display: flex; background: #f1f5f9; border-radius: 8px; padding: 3px; border: 1px solid #e2e8f0; gap: 2px; }
+    .lang-btn { background: transparent; border: none; color: #64748b; font-size: 12px; font-weight: 700; padding: 5px 9px; border-radius: 6px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .lang-btn.active { background: #10b981; color: white; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+    
+    .btn-signin {
+      background: #14532d;
+      color: #ffffff;
+      border: none;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .btn-signin:hover { background: #166534; transform: translateY(-1px); }
+
+    .portal-link { background: #2563eb; color: white; padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; transition: background 0.2s; white-space: nowrap; }
+    .portal-link:hover { background: #1d4ed8; }
+
+    /* Hero Slider */
+    .hero-slider-container { position: relative; width: 100%; height: 460px; background: #e2e8f0; overflow: hidden; border-bottom: 1px solid #e2e8f0; }
+    .slide-item { position: absolute; inset: 0; opacity: 0; transition: opacity 0.7s ease-in-out; pointer-events: none; }
+    .slide-item.active { opacity: 1; pointer-events: auto; }
+    
+    .slide-bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    .slide-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, #f8fafc 0%, rgba(248,250,252,0.94) 50%, rgba(248,250,252,0.2) 100%);
+    }
+
+    .slide-content {
+      position: relative;
+      z-index: 10;
+      max-width: 680px;
+      padding: 50px 40px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .scheme-tag { display: inline-flex; background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; font-size: 11px; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; width: fit-content; margin-bottom: 12px; }
+    .scheme-title { font-size: 34px; font-weight: 900; line-height: 1.2; margin-bottom: 10px; color: #0f172a; }
+    .scheme-benefit { font-size: 16px; font-weight: 700; color: #059669; margin-bottom: 10px; }
+    .scheme-desc { font-size: 14px; color: #475569; line-height: 1.6; margin-bottom: 20px; font-weight: 500; }
+
+    .btn-apply {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #10b981; color: white; text-decoration: none; font-size: 14px; font-weight: 800;
+      padding: 12px 24px; border-radius: 8px; width: fit-content;
+      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); transition: all 0.2s;
+    }
+    .btn-apply:hover { background: #059669; transform: translateY(-2px); }
+
+    .slider-nav-btn {
+      position: absolute; top: 50%; transform: translateY(-50%); z-index: 20;
+      width: 44px; height: 44px; border-radius: 50%; background: white; border: 1px solid #e2e8f0;
+      color: #0f172a; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+    }
+    .slider-nav-btn:hover { background: #f1f5f9; color: #059669; }
+    .slider-prev { left: 20px; } .slider-next { right: 20px; }
+
+    /* Domains Navigation */
+    .domains-section { padding: 30px 40px 10px; max-width: 1400px; margin: 0 auto; }
+    .domain-title { font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .domain-title::before { content: ""; display: inline-block; width: 4px; height: 20px; background: #10b981; border-radius: 2px; }
+    
+    .domains-row {
+      display: flex; gap: 12px; overflow-x: auto; padding-bottom: 15px; scrollbar-width: none;
+    }
+    .domains-row::-webkit-scrollbar { display: none; }
+    
+    .domain-btn {
+      padding: 10px 20px; background: white; border: 1px solid #cbd5e1; border-radius: 30px;
+      font-size: 14px; font-weight: 700; color: #475569; cursor: pointer; white-space: nowrap;
+      transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .domain-btn:hover { border-color: #10b981; color: #059669; }
+    .domain-btn.active { background: #10b981; color: white; border-color: #10b981; box-shadow: 0 4px 10px rgba(16,185,129,0.3); }
+
+    /* Cards Grid */
+    .content-area { padding: 10px 40px 60px; max-width: 1400px; margin: 0 auto; }
+    .cards-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+
+    .scheme-card {
+      background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0;
+      transition: transform 0.2s ease, box-shadow 0.2s ease; display: flex; flex-direction: column;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .scheme-card:hover { transform: translateY(-4px); box-shadow: 0 12px 20px rgba(0,0,0,0.08); border-color: #cbd5e1; }
+    .card-thumb { width: 100%; height: 165px; object-fit: cover; background: #e2e8f0; border-bottom: 1px solid #e2e8f0; }
+    .card-body { padding: 20px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+    .card-category { font-size: 11px; font-weight: 800; color: #059669; text-transform: uppercase; margin-bottom: 8px; background: #ecfdf5; display: inline-block; padding: 2px 8px; border-radius: 4px; width: fit-content; }
+    .card-title { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px; line-height: 1.3; }
+    .card-benefit { font-size: 13px; color: #475569; margin-bottom: 20px; flex: 1; font-weight: 500; }
+    .card-btn { display: block; text-align: center; background: white; color: #10b981; border: 2px solid #10b981; padding: 10px 0; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 800; transition: all 0.2s; }
+    .card-btn:hover { background: #10b981; color: white; }
+    
+    .empty-state { grid-column: 1 / -1; text-align: center; padding: 50px 20px; background: white; border-radius: 12px; border: 1px dashed #cbd5e1; color: #64748b; font-weight: 600; }
+
+    /* Modal Backdrop */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(3px);
+      z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-card {
+      background: #ffffff; width: 100%; max-width: 440px; border-radius: 16px; padding: 28px;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15); border: 1px solid #e2e8f0; position: relative;
+    }
+    .modal-close { position: absolute; top: 16px; right: 18px; background: transparent; border: none; font-size: 20px; color: #94a3b8; cursor: pointer; }
+    .modal-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 4px; }
+    .modal-sub { font-size: 12px; color: #64748b; margin-bottom: 16px; }
+    .auth-error { background: #fee2e2; color: #b91c1c; font-size: 12px; padding: 8px 12px; border-radius: 6px; margin-bottom: 14px; display: none; font-weight: 600; }
+    
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 5px; }
+    .form-input, .form-select {
+      width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; outline: none; background: #ffffff;
+    }
+    .form-input:focus, .form-select:focus { border-color: #059669; }
+    .btn-submit-auth {
+      width: 100%; padding: 12px; background: #059669; color: white; font-weight: 800; font-size: 14px;
+      border: none; border-radius: 8px; cursor: pointer; margin-top: 8px; transition: background 0.2s;
+    }
+    .btn-submit-auth:hover { background: #047857; }
+    .auth-toggle { text-align: center; font-size: 12px; color: #64748b; margin-top: 16px; border-top: 1px solid #f1f5f9; padding-top: 12px; }
+    .auth-toggle button { background: none; border: none; color: #059669; font-weight: 800; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <header class="navbar">
+    <a href="#" class="brand-logo">SevaSetu <span class="brand-badge"> </span></a>
+    <div class="nav-actions">
+      <!-- 6-Language Switcher -->
+      <div class="lang-selector">
+        <button class="lang-btn active" data-lang="en" onclick="switchLanguage('en')">English</button>
+        <button class="lang-btn" data-lang="hi" onclick="switchLanguage('hi')">हिन्दी</button>
+        <button class="lang-btn" data-lang="te" onclick="switchLanguage('te')">తెలుగు</button>
+        <button class="lang-btn" data-lang="ta" onclick="switchLanguage('ta')">தமிழ்</button>
+        <button class="lang-btn" data-lang="kn" onclick="switchLanguage('kn')">ಕನ್ನಡ</button>
+        <button class="lang-btn" data-lang="ml" onclick="switchLanguage('ml')">മലയാളം</button>
+      </div>
+
+      <button class="btn-signin" id="btnSignInModal" onclick="openAuthModal('login')">
+        <span id="lblSignIn">Sign In</span> →
+      </button>
+
+      <a href="portal.html" class="portal-link" id="btnDeskLink">Voice Portal →</a>
+    </div>
+  </header>
+
+  <!-- Hero Slider -->
+  <div class="hero-slider-container">
+    <button class="slider-nav-btn slider-prev" onclick="prevSlide()">❮</button>
+    <button class="slider-nav-btn slider-next" onclick="nextSlide()">❯</button>
+    <div id="slidesWrapper"></div>
+  </div>
+
+  <!-- Domains Navigation -->
+  <section class="domains-section">
+    <h2 class="domain-title" id="lblDomainsTitle">Explore by Sector / Domain</h2>
+    <div class="domains-row" id="domainsRow"></div>
+  </section>
+
+  <!-- Cards Grid -->
+  <main class="content-area">
+    <div class="cards-row" id="cardsGrid"></div>
+  </main>
+
+  <!-- Login Modal -->
+  <div class="modal-backdrop" id="authModal">
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeAuthModal()">✕</button>
+      <h3 class="modal-title" id="modalTitle">Citizen & CSC Portal Login</h3>
+      <p class="modal-sub" id="modalSub">Authenticate via Firebase Cloud Auth to access eligibility evaluations.</p>
+
+      <div class="auth-error" id="authError"></div>
+
+      <form id="authForm" onsubmit="handleAuthSubmit(event)">
+        <div class="form-group" id="groupName" style="display:none;">
+          <label class="form-label" id="lblFullName">Full Legal Name</label>
+          <input type="text" id="inputName" class="form-input" placeholder="Ramesh Kumar">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" id="lblAuthPhone">Email / Registered ID</label>
+          <input type="email" id="inputEmail" required class="form-input" placeholder="citizen@example.com">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" id="lblAuthPass">Password (Min. 6 Characters)</label>
+          <input type="password" id="inputPass" required class="form-input" placeholder="••••••••">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" id="lblRole">Select Portal Access Role</label>
+          <select id="selectRole" class="form-select">
+            <option value="citizen">Individual Citizen (Beneficiary)</option>
+            <option value="csc">Village Level Entrepreneur (CSC / VLE Operator)</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-submit-auth" id="btnSubmitAuth">Proceed to Evaluation Portal →</button>
+      </form>
+
+      <div class="auth-toggle">
+        <span id="authToggleText">First time applicant?</span> 
+        <button type="button" onclick="toggleAuthMode()" id="btnToggleAuth">Create an Account</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentSlide = 0;
+    let autoPlayTimer = null;
+    let activeLang = localStorage.getItem("sevasetu_lang") || "en";
+    let activeDomainId = "all";
+    let authMode = "login";
+
+    const UI_STRINGS = {
+      en: { applyBtn: "Apply Now ↗", domainsTitle: "Explore by Sector / Domain", deskBtn: "Voice Portal →", noSchemes: "No schemes available in this category currently.", signIn: "Sign In", modalLoginTitle: "Citizen & CSC Portal Login", modalSignUpTitle: "Create SevaSetu Account", modalLoginSub: "Authenticate to access evaluations.", modalSignUpSub: "Register profile credentials.", btnProceed: "Proceed to Evaluation Portal →", btnRegister: "Register & Proceed →", toggleToSignUp: "Create an Account", toggleToLogin: "Sign In Here", askSignUp: "First time applicant?", askLogin: "Already have an account?" },
+      hi: { applyBtn: "अभी आवेदन करें ↗", domainsTitle: "क्षेत्र / डोमेन द्वारा खोजें", deskBtn: "आवाज पोर्टल →", noSchemes: "वर्तमान में इस श्रेणी में कोई योजना उपलब्ध नहीं है।", signIn: "साइन इन", modalLoginTitle: "नागरिक एवं सीएससी लॉगिन", modalSignUpTitle: "सेवासेतु नया खाता बनाएं", modalLoginSub: "पात्रता मूल्यांकन के लिए लॉगिन करें।", modalSignUpSub: "नागरिक अथवा सीएससी विवरण पंजीकृत करें।", btnProceed: "पोर्टल में प्रवेश करें →", btnRegister: "खाता बनाकर आगे बढ़ें →", toggleToSignUp: "नया खाता बनाएं", toggleToLogin: "यहाँ लॉगिन करें", askSignUp: "पहली बार उपयोग कर रहे हैं?", askLogin: "पहले से खाता है?" },
+      te: { applyBtn: "ఇప్పుడే దరఖాస్తు చేయండి ↗", domainsTitle: "విభాగాల వారీగా అన్వేషించండి", deskBtn: "వాయిస్ పోర్టల్ →", noSchemes: "ప్రస్తుతం ఈ విభాగంలో ఎలాంటి పథకాలు అందుబాటులో లేవు.", signIn: "లాగిన్", modalLoginTitle: "పౌర & CSC పోర్టల్ లాగిన్", modalSignUpTitle: "సేవాసేతు ఖాతా సృష్టించండి", modalLoginSub: "అర్హత పరిశీలన కోసం లాగిన్ అవ్వండి.", modalSignUpSub: "వివరాలను నమోదు చేయండి.", btnProceed: "పోర్టల్‌లోకి ప్రవేశించండి →", btnRegister: "నమోదు చేసుకుని కొనసాగించండి →", toggleToSignUp: "ఖాతా తెరవండి", toggleToLogin: "ఇక్కడ లాగిన్ అవ్వండి", askSignUp: "మొదటిసారి వస్తున్నారా?", askLogin: "ఇప్పటికే ఖాతా ఉందా?" },
+      ta: { applyBtn: "இப்போதே விண்ணப்பிக்கவும் ↗", domainsTitle: "துறை வாரியாக ஆராயுங்கள்", deskBtn: "குரல் தளம் →", noSchemes: "தற்போது இந்த பிரிவில் திட்டங்கள் எதுவும் இல்லை.", signIn: "உள்நுழைய", modalLoginTitle: "குடிமக்கள் & CSC உள்நுழைவு", modalSignUpTitle: "சேவாசேது கணக்கை உருவாக்கவும்", modalLoginSub: "பதிவுகளை அணுகவும்.", modalSignUpSub: "விவரங்களை பதிவு செய்யவும்.", btnProceed: "தளத்திற்கு செல்லவும் →", btnRegister: "பதிவு செய்து தொடரவும் →", toggleToSignUp: "கணக்கை உருவாக்கவும்", toggleToLogin: "இங்கே உள்நுழையவும்", askSignUp: "முதல் முறை பயனரா?", askLogin: "ஏற்கனவே கணக்கு உள்ளதா?" },
+      kn: { applyBtn: "ಈಗಲೇ ಅರ್ಜಿ ಸಲ್ಲಿಸಿ ↗", domainsTitle: "ಕ್ಷೇತ್ರವಾರು ಯೋಜನೆಗಳು", deskBtn: "ಧ್ವನಿ ಪೋರ್ಟಲ್ →", noSchemes: "ಪ್ರಸ್ತುತ ಈ ವಿಭಾಗದಲ್ಲಿ ಯೋಜನೆಗಳು ಲಭ್ಯವಿಲ್ಲ.", signIn: "ಲಾಗಿನ್", modalLoginTitle: "ನಾಗರಿಕ & CSC ಲಾಗಿನ್", modalSignUpTitle: "ಖಾತೆ ರಚಿಸಿ", modalLoginSub: "ದಾಖಲೆಗಳನ್ನು ಪ್ರವೇಶಿಸಿ.", modalSignUpSub: "ವಿವರಗಳನ್ನು ನೋಂದಾಯಿಸಿ.", btnProceed: "ಪೋರ್ಟಲ್‌ಗೆ ಮುಂದುವರಿಯಿರಿ →", btnRegister: "ನೋಂದಾಯಿಸಿ ಮುಂದುವರಿಯಿರಿ →", toggleToSignUp: "ಖಾತೆ ರಚಿಸಿ", toggleToLogin: "ಇಲ್ಲಿ ಲಾಗಿನ್ ಆಗಿ", askSignUp: "ಮೊದಲ ಬಾರಿಗೆ ಬಂದಿದ್ದೀರಾ?", askLogin: "ಖಾತೆ ಇದೆಯೇ?" },
+      ml: { applyBtn: "ഇപ്പോൾ അപേക്ഷിക്കുക ↗", domainsTitle: "മേഖല തിരിച്ച് കണ്ടെത്തുക", deskBtn: "വോയ്‌സ് പോർട്ടൽ →", noSchemes: "നിലവിൽ ഈ വിഭാഗത്തിൽ പദ്ധതികൾ ലഭ്യമല്ല.", signIn: "ലോഗിൻ", modalLoginTitle: "ലോഗിൻ", modalSignUpTitle: "അക്കൗണ്ട് തുടങ്ങുക", modalLoginSub: "വിവരങ്ങൾ കാണുക.", modalSignUpSub: "വിവരങ്ങൾ നൽകുക.", btnProceed: "പോർട്ടലിലേക്ക് കടക്കുക →", btnRegister: "തുടരുക →", toggleToSignUp: "അക്കൗണ്ട് സൃഷ്ടിക്കുക", toggleToLogin: "ലോഗിൻ ചെയ്യുക", askSignUp: "ആദ്യമായി ഉപയോഗിക്കുകയാണോ?", askLogin: "അക്കൗണ്ട് ഉണ്ടോ?" }
+    };
+
+    const DOMAINS = [
+      { id: "all", name: { en: "All Schemes", hi: "सभी योजनाएं", te: "అన్ని పథకాలు", ta: "அனைத்து திட்டங்கள்", kn: "ಎಲ್ಲಾ ಯೋಜನೆಗಳು", ml: "എല്ലാ പദ്ധതികളും" } },
+      { id: "agriculture", name: { en: "Agriculture & Farmers", hi: "कृषि एवं किसान", te: "వ్యవసాయం & రైతులు", ta: "விவசாயம் & விவசாயிகள்", kn: "ಕೃಷಿ ಮತ್ತು ರೈತರು", ml: "കൃഷി & കർഷകർ" } },
+      { id: "scholarship", name: { en: "Scholarships & Education", hi: "छात्रवृत्ति एवं शिक्षा", te: "స్కాలర్‌షిప్‌లు & విద్య", ta: "உதவித்தொகை & கல்வி", kn: "ವಿದ್ಯಾರ್ಥಿವೇತನ ಮತ್ತು ಶಿಕ್ಷಣ", ml: "സ്കോളർഷിപ്പുകളും വിദ്യാഭ്യാസവും" } },
+      { id: "health", name: { en: "Healthcare", hi: "स्वास्थ्य देखभाल", te: "ఆరోగ్య సంరక్షణ", ta: "சுகாதாரம்", kn: "ಆರೋಗ್ಯ ರಕ್ಷಣೆ", ml: "ಆರೋಗ್ಯ സംരക്ഷണം" } },
+      { id: "housing", name: { en: "Housing & Urban", hi: "आवास एवं शहरी विकास", te: "గృహ నిర్మాణం & పట్టణ", ta: "வீட்டுவசதி & நகர்ப்புறம்", kn: "ವಸತಿ ಮತ್ತು ನಗರ", ml: "ഭവന നിർമ്മാണം & നഗരം" } },
+      { id: "family", name: { en: "Family & Pension", hi: "परिवार एवं पेंशन", te: "కుటుంబం & పెన్షన్", ta: "குடும்பம் & ஓய்வூதியம்", kn: "ಕುಟುಂಬ ಮತ್ತು ಪಿಂಚಣಿ", ml: "കുടുംബം & പെൻഷൻ" } }
+    ];
+
+    // Comprehensive multi-scheme database for each domain
+    const SCHEMES_DATA = [
+      // 1. Agriculture (4 Schemes)
+      {
+        id: "pm-kisan",
+        domainId: "agriculture",
+        featured: true,
+        sector: { en: "Agriculture", hi: "कृषि", te: "వ్యవసాయం", ta: "விவசாயம்", kn: "ಕೃಷಿ", ml: "കൃഷി" },
+        name: { en: "PM-Kisan Samman Nidhi", hi: "पीएम-किसान सम्मान निधि", te: "పీఎం కిసాన్ సమ్మాన్ నిధి", ta: "பிரதம மந்திரி கிசான் திட்டம்", kn: "ಪಿಎಂ ಕಿಸಾನ್ ಸಮ್ಮಾನ್ ನಿಧಿ", ml: "പി.എം കിസാൻ സമ്മാൻ നിധി" },
+        benefit: { en: "₹6,000 per year direct income transfer in 3 installments", hi: "प्रति वर्ष ₹6,000 की नकद सहायता 3 समान किस्तों में", te: "ఏడాదికి ₹6,000 నేరుగా రైతు ఖాతాలో జమ", ta: "ஆண்டுக்கு ₹6,000 நேரடி வருமான ஆதரவு", kn: "ವರ್ಷಕ್ಕೆ ₹6,000 ನೇರ ಆದಾಯ ಬೆಂಬಲ", ml: "വർഷത്തിൽ ₹6,000 നേരിട്ടുള്ള വരുമാന സഹായം" },
+        desc: { en: "Direct financial support for all landholding farmer families to procure agricultural inputs.", hi: "सभी भूमिधारक किसान परिवारों को कृषि उपकरण जुटाने के लिए वित्तीय सहायता।", te: "రైతు కుటుంబాలకు పెట్టుబడి ఖర్చుల నిమిత్తం ప్రత్యక్ష సాయం.", ta: "விவசாயிகளுக்கு வேளாண் இடுபொருட்களை வாங்க நேரடி நிதி உதவி.", kn: "ರೈತ ಕುಟುಂಬಗಳಿಗೆ ಕೃಷಿ ಪರಿಕರಗಳಿಗಾಗಿ ನೇರ ಆರ್ಥಿಕ ನೆರವು.", ml: "കൃഷി ആവശ്യങ്ങൾക്കായി കർഷക കുടുംബങ്ങൾക്ക് നേരിട്ടുള്ള സാമ്പത്തിക സഹായം." },
+        image: "https://img.jagranjosh.com/images/2025/07/19/article/image/Pm-kisan-samman-nidhi-yojana-1752910321827.webp",
+        applyUrl: "https://pmkisan.gov.in"
+      },
+      {
+        id: "rythu-bharosa",
+        domainId: "agriculture",
+        featured: false,
+        sector: { en: "Agriculture", hi: "कृषि", te: "వ్యవసాయం", ta: "விவசாயம்", kn: "ಕೃಷಿ", ml: "കൃഷി" },
+        name: { en: "Rythu Bharosa / Bandhu Support", hi: "रैतु भरोसा निवेश सहायता", te: "రైతు భరోసా / బంధు సాయం", ta: "ரைத்து பரோசா உதவி", kn: "ರೈತು ಭರೋಸಾ ಬೆಂಬಲ", ml: "റൈതു ഭരോസ പദ്ധതി" },
+        benefit: { en: "₹5,000 per acre per season investment support", hi: "प्रति एकड़ ₹5,000 प्रति फसल निवेश सहायता", te: "ఎకరాకు సీజన్‌కు ₹5,000 పంట పెట్టుబడి సాయం", ta: "பயிர் முதலீட்டுக்கு ஏக்கருக்கு ₹5,000 மானியம்", kn: "ಪ್ರತಿ ಎಕರೆಗೆ ಪ್ರತಿ ಋತುವಿಗೆ ₹5,000 ನೆರವು", ml: "ഓരോ ഏക്കറിനും ₹5,000 ധനസഹായം" },
+        desc: { en: "State seasonal input investment assistance directly deposited for agricultural landholders.", hi: "कृषि भूमिधारकों के लिए राज्य स्तरीय मौसमी निवेश सहायता।", te: "రైతులకు సీజన్‌కు ఎకరా చొప్పున ప్రభుత్వం అందించే పెట్టుబడి సాయం.", ta: "விவசாய முதலீட்டிற்கு ஏக்கருக்கு வழங்கப்படும் மாநில அரசின் நிதி உதவி.", kn: "ಕೃಷಿ ಹೂಡಿಕೆಗಾಗಿ ಪ್ರತಿ ಎಕರೆಗೆ ರಾಜ್ಯ ಸರ್ಕಾರದ ಆರ್ಥಿಕ ನೆರವು.", ml: "കൃഷി ആവശ്യങ്ങൾക്കായി സംസ്ഥാന സർക്കാർ നൽകുന്ന സബ്‌സിഡി." },
+        image: "https://cdn.siasat.com/wp-content/uploads/2025/02/RYTHU-BHAROSA-SCHEME-TELANGANA-GOVT.jpg",
+        applyUrl: "https://telangana.gov.in"
+      },
+      {
+        id: "pm-fasal-bima",
+        domainId: "agriculture",
+        featured: false,
+        sector: { en: "Agriculture", hi: "कृषि", te: "వ్యవసాయం", ta: "விவசாயம்", kn: "ಕೃಷಿ", ml: "കൃഷി" },
+        name: { en: "PM Fasal Bima Yojana (PMFBY)", hi: "प्रधानमंत्री फसल बीमा योजना", te: "ప్రధాన మంత్రి ఫసల్ బీమా యోజన", ta: "பயிர் காப்பீட்டுத் திட்டம்", kn: "ಪ್ರಧಾನ ಮಂತ್ರಿ ಫಸಲ್ ಬಿಮಾ ಯೋಜನೆ", ml: "പി.എം ഫസൽ ബീമാ യോജന" },
+        benefit: { en: "Comprehensive crop loss and damage coverage", hi: "प्राकृतिक आपदाओं से फसल क्षति पर संपूर्ण बीमा सुरक्षा", te: "ప్రకృతి వైపరీత్యాల వల్ల పంట నష్టానికి పూర్తి బీమా రక్షణ", ta: "இயற்கை பேரிடரால் ஏற்படும் பயிர் இழப்பிற்கு முழு இழப்பீடு", kn: "ಬೆಳೆ ಹಾನಿಗೆ ಸಂಪೂರ್ಣ ವಿಮಾ ಪರಿಹಾರ", ml: "വിളനാശത്തിന് സമഗ്ര ഇൻഷുറൻസ് പരിരക്ഷ" },
+        desc: { en: "Financial support to farmers suffering crop loss/damage arising out of unforeseen natural events.", hi: "सूखा, बाढ़ और कीटों से अप्रत्याशित फसल क्षति के लिए बीमा सुरक्षा।", te: "అకాల వర్షాలు, కరువు మరియు తెగుళ్ల వల్ల నష్టపోయిన పంటలకు బీమా పరిహారం.", ta: "எதிர்பாராத இயற்கை இடர்பாடுகளால் ஏற்படும் பயிர் இழப்பிற்கு பாதுகாப்பு.", kn: "ಪ್ರಕೃತಿ ವಿಕೋಪಗಳಿಂದ ಉಂಟಾಗುವ ಬೆಳೆ ನಷ್ಟಕ್ಕೆ ಆರ್ಥಿಕ ಪರಿಹಾರ.", ml: "പ്രകൃതിദുരന്തങ്ങൾ കാരണമുണ്ടാകുന്ന വിളനാശത്തിന് സംരക്ഷണം." },
+        image: "https://i.pinimg.com/originals/ac/9f/64/ac9f648d35ed81817c0fb018ad37569c.jpg",
+        applyUrl: "https://pmfby.gov.in"
+      },
+      {
+        id: "kisan-credit-card",
+        domainId: "agriculture",
+        featured: false,
+        sector: { en: "Agriculture", hi: "कृषि", te: "వ్యవసాయం", ta: "விவசாயம்", kn: "ಕೃಷಿ", ml: "കൃഷി" },
+        name: { en: "Kisan Credit Card (KCC)", hi: "किसान क्रेडिट कार्ड योजना", te: "కిసాన్ క్రెడిట్ కార్డు పథకం", ta: "கிசான் கடன் அட்டை திட்டம்", kn: "ಕಿಸಾನ್ ಕ್ರೆಡಿಟ್ ಕಾರ್ಡ್ ಯೋಜನೆ", ml: "കിസാൻ ക്രെഡിറ്റ് കാർഡ്" },
+        benefit: { en: "Institutional credit up to ₹3 Lakh at 4% interest", hi: "₹3 लाख तक का सस्ता ऋण मात्र 4% रियायती ब्याज दर पर", te: "రైతులకు 4% రాయితీ వడ్డీతో ₹3 లక్షల వరకు పంట రుణం", ta: "4% வட்டி மானியத்துடன் ₹3 லட்சம் வரை கடன் உதவி", kn: "ಶೇಕಡಾ 4 ರ ಬಡ್ಡಿದರದಲ್ಲಿ ₹3 ಲಕ್ಷದವರೆಗೆ ಕೃಷಿ ಸಾಲ", ml: "4% പലിശ നിരക്കിൽ ₹3 ലക്ഷം വരെയുള്ള കാർഷിക വായ്പ" },
+        desc: { en: "Timely institutional credit support to farmers for cultivation and post-harvest expenses.", hi: "खेती और फसल कटाई के बाद के खर्चों के लिए किसानों को समय पर रियायती ऋण सहायता।", te: "విత్తనాలు, ఎరువులు మరియు వ్యవసాయ అవసరాలకు సరసమైన వడ్డీతో బ్యాంక్ రుణాలు.", ta: "விவசாய தேவைகளுக்காக வங்கிகள் மூலம் வழங்கப்படும் மானியக் கடன்.", kn: "ಕೃಷಿ ಮತ್ತು ಕಟಾವಿನ ವೆಚ್ಚಗಳಿಗಾಗಿ ರೈತರಿಗೆ ಕಡಿಮೆ ಬಡ್ಡಿಯ ಸಾಲ ಸೌಲಭ್ಯ.", ml: "കർഷകർക്ക് കൃഷി ആവശ്യങ്ങൾക്കായി ബാങ്ക് വഴി ലഭിക്കുന്ന വായ്പ." },
+        image: "https://kj1bcdn.b-cdn.net/media/102235/kcc-card.jpg",
+        applyUrl: "https://myscheme.gov.in/schemes/kcc"
+      },
+
+      // 2. Scholarship & Education (4 Schemes)
+      {
+        id: "post-matric",
+        domainId: "scholarship",
+        featured: true,
+        sector: { en: "Scholarship", hi: "छात्रवृत्ति", te: "స్కాలర్‌షిప్", ta: "உதவித்தொகை", kn: "ವಿದ್ಯಾರ್ಥಿವೇತನ", ml: "സ്കോളർഷിപ്പ്" },
+        name: { en: "Post-Matric Scholarship (SC/ST/OBC)", hi: "पोस्ट-मैट्रिक छात्रवृत्ति योजना", te: "పోస్ట్-మెట్రిక్ స్కాలర్‌షిప్", ta: "போஸ்ட்-மெட்ரிக் உதவித்தொகை", kn: "ಮೆಟ್ರಿಕ್ ನಂತರದ ವಿದ್ಯಾರ್ಥಿವೇತನ", ml: "പോസ്റ്റ്-മെട്രിക് സ്കോളർഷിപ്പ്" },
+        benefit: { en: "100% Tuition reimbursement + study stipend", hi: "100% शिक्षण शुल्क प्रतिपूर्ति एवं छात्रवृत्ति भत्ता", te: "పూర్తి ఫీజు రీయింబర్స్‌మెంట్ మరియు ఉపకార వేతనం", ta: "முழு கல்விக்கட்டண சலுகை மற்றும் உதவித்தொகை", kn: "100% ಬೋಧನಾ ಶುಲ್ಕ ಮರುಪಾವತಿ ಮತ್ತು ಮಾಸಿಕ ಭತ್ಯೆ", ml: "പൂർണ്ണ ട്യൂഷൻ ഫീസ് റീഇംബേഴ്സ്മെന്റും പ്രതിമാസ സ്റ്റൈപ്പന്റും" },
+        desc: { en: "Direct benefit transfer for underprivileged students pursuing post-secondary education.", hi: "कॉलेजों में पढ़ने वाले वंचित वर्ग के छात्र-छात्राओं के लिए पूर्ण शुल्क सहायता।", te: "ఉన్నత విద్య చదువుతున్న విద్యార్థులకు నేరుగా ఆర్థిక సాయం.", ta: "உயர்கல்வி பயிலும் எளிய பிரிவு மாணவர்களுக்கான நேரடி நிதி உதவி.", kn: "ಉನ್ನತ ಶಿಕ್ಷಣ ಪಡೆಯುತ್ತಿರುವ ವಿದ್ಯಾರ್ಥಿಗಳಿಗೆ ನೇರ ಪ್ರಯೋಜನ ವರ್ಗಾವಣೆ.", ml: "ഉന്നതവിദ്യാഭ്യാസം നടത്തുന്ന അർഹരായ വിദ്യാർത്ഥികൾക്ക് നേരിട്ടുള്ള ധനസഹായം." },
+        image: "https://d2w7l1p59qkl0r.cloudfront.net/article/wp-content/uploads/2025/07/18183301/Post-Matric-Scholarships.jpg",
+        applyUrl: "https://scholarships.gov.in"
+      },
+      {
+        id: "nmms-scholarship",
+        domainId: "scholarship",
+        featured: false,
+        sector: { en: "Scholarship", hi: "छात्रवृत्ति", te: "స్కాలర్‌షిప్", ta: "உதவித்தொகை", kn: "ವಿದ್ಯಾರ್ಥಿವೇತನ", ml: "സ്കോളർഷിപ്പ്" },
+        name: { en: "National Means-cum-Merit Scholarship", hi: "राष्ट्रीय साधन-सह-योग्यता छात्रवृत्ति", te: "నేషనల్ మీన్స్-కమ్-మెరిట్ స్కాలర్‌షిప్", ta: "தேசிய திறனாய்வு உதவித்தொகை", kn: "ರಾಷ್ಟ್ರೀಯ ಮೆರಿಟ್ ವಿದ್ಯಾರ್ಥಿವೇತನ", ml: "എൻ.എം.എം.എസ് സ്കോളർഷിപ്പ്" },
+        benefit: { en: "₹12,000 per year (₹1,000/month) for Class 9-12", hi: "कक्षा 9 से 12 तक ₹12,000 वार्षिक सहायता", te: "9 నుండి 12వ తరగతి వరకు ఏటా ₹12,000 స్కాలర్‌షిప్", ta: "9 முதல் 12 ஆம் வகுப்பு வரை ஆண்டுக்கு ₹12,000", kn: "9 ರಿಂದ 12 ನೇ ತರಗತಿಯವರೆಗೆ ವರ್ಷಕ್ಕೆ ₹12,000", ml: "9 മുതൽ 12 വരെയുള്ള ക്ലാസുകൾക്ക് പ്രതിവർഷം ₹12,000" },
+        desc: { en: "Incentive scheme to prevent school dropouts among meritorious students from economically weaker sections.", hi: "आर्थिक रूप से कमजोर मेधावी छात्रों को माध्यमिक स्तर पर पढ़ाई जारी रखने हेतु वित्तीय सहायता।", te: "పేద విద్యార్థులు బడి మానకుండా 9 నుండి 12వ తరగతి వరకు చదువుకోవడానికి ఆర్థిక ప్రోత్సాహం.", ta: "பொருளாதாரத்தில் பின்தங்கிய திறமையான பள்ளி மாணவர்களுக்கான உதவித்தொகை.", kn: "ಆರ್ಥಿಕವಾಗಿ ಹಿಂದುಳಿದ ಪ್ರತಿಭಾವಂತ ವಿದ್ಯಾರ್ಥಿಗಳಿಗೆ ಮಾಧ್ಯಮಿಕ ಶಿಕ್ಷಣಕ್ಕಾಗಿ ಧನಸಹಾಯ.", ml: "സാമ്പത്തികമായി പിന്നാക്കം നിൽക്കുന്ന മിടുക്കരായ വിദ്യാർത്ഥികൾക്കുള്ള സ്കോളർഷിപ്പ്." },
+        image: "https://govtschemesindia.com/wp-content/uploads/2026/05/National-Means-Cum-Merit-Scholarship-Scheme.jpg",
+        applyUrl: "https://scholarships.gov.in"
+      },
+      {
+        id: "pragati-girls",
+        domainId: "scholarship",
+        featured: false,
+        sector: { en: "Scholarship", hi: "छात्रवृत्ति", te: "స్కాలర్‌షిప్", ta: "உதவித்தொகை", kn: "ವಿದ್ಯಾರ್ಥಿವೇತನ", ml: "സ്കോളർഷിപ്പ്" },
+        name: { en: "AICTE Pragati Scholarship for Girls", hi: "एआईसीटीई प्रगति बालिका छात्रवृत्ति", te: "ఏఐసీటీఈ ప్రగతి బాలికల స్కాలర్‌షిప్", ta: "ஏஐசிடிஇ பிரகதி மாணவிகள் உதவித்தொகை", kn: "ಪ್ರಗತಿ ಹೆಣ್ಣುಮಕ್ಕಳ ವಿದ್ಯಾರ್ಥಿವೇತನ", ml: "എ.ഐ.സി.ടി.ഇ പ്രഗതി സ്കോളർഷിപ്പ്" },
+        benefit: { en: "₹50,000 per annum for technical degree/diploma", hi: "तकनीकी शिक्षा (डिग्री/डिप्लोमा) के लिए ₹50,000 प्रति वर्ष", te: "టెక్నికల్ డిగ్రీ లేదా డిప్లొమా చదివే విద్యార్థినులకు ఏటా ₹50,000", ta: "தொழில்நுட்ப கல்வி பயிலும் மாணவிகளுக்கு ஆண்டுக்கு ₹50,000", kn: "ತಾಂತ್ರಿಕ ಪದವಿ/ಡಿಪ್ಲೊಮಾ ವಿದ್ಯಾರ್ಥಿನಿಯರಿಗೆ ವಾರ್ಷಿಕ ₹50,000", ml: "സാങ്കേതിക വിദ്യാഭ്യാസത്തിനായി പെൺകുട്ടികൾക്ക് വർഷം ₹50,000" },
+        desc: { en: "Financial assistance to young female students to advance technical education and engineering careers.", hi: "छात्राओं को तकनीकी एवं इंजीनियरिंग शिक्षा में आगे बढ़ाने हेतु भारत सरकार की सहायता।", te: "ఇంజనీరింగ్ మరియు పాలిటెక్నిక్ చదువుతున్న ప్రతిభావంతులైన బాలికలకు ప్రభుత్వం ఇచ్చే ప్రోత్సాహం.", ta: "பெண்களின் தொழில்நுட்ப கல்வியை ஊக்குவிப்பதற்கான சிறப்பு உதவித்தொகை திட்டம்.", kn: "ಹೆಣ್ಣುಮಕ್ಕಳ ಉನ್ನತ ತಾಂತ್ರಿಕ ಶಿಕ್ಷಣವನ್ನು ಪ್ರೋತ್ಸಾಹಿಸಲು ವಾರ್ಷಿಕ ಆರ್ಥಿಕ ನೆರವು.", ml: "പെൺകുട്ടികളുടെ സാങ്കേതിക വിദ്യാഭ്യാസത്തിന് പിന്തുണ നൽകുന്ന പദ്ധതി." },
+        image: "https://sarsaeducation.com/wp-content/uploads/2025/04/AICTE_PRAGATI_SCHOLARSHIP.jpg",
+        applyUrl: "https://www.aicte-india.org"
+      },
+      {
+        id: "ugc-research-grant",
+        domainId: "scholarship",
+        featured: false,
+        sector: { en: "Education", hi: "उच्च शिक्षा", te: "ఉన్నత విద్య", ta: "உயர்கல்வி", kn: "ಉನ್ನತ ಶಿಕ್ಷಣ", ml: "ഉന്നത വിദ്യാഭ്യാസം" },
+        name: { en: "UGC Faculty Research Award & Grant", hi: "यूजीसी संकाय अनुसंधान अनुदान", te: "యూజీసీ టీచర్ రీసెర్చ్ గ్రాంట్", ta: "யுஜிசி ஆசிரியர் ஆராய்ச்சி மானியம்", kn: "ಯುಜಿಸಿ ಶಿಕ್ಷಕರ ಸಂಶೋಧನಾ ಅನುದಾನ", ml: "യു.ജി.സി ഗവേഷണ ഗ്രാന്റ്" },
+        benefit: { en: "Research funding grant up to ₹10 Lakhs", hi: "शोध परियोजनाओं के लिए ₹10 लाख तक का वित्तीय अनुदान", te: "పరిశోధన ప్రాజెక్టుల కోసం ₹10 లక్షల వరకు ఆర్థిక గ్రాంట్", ta: "ஆராய்ச்சி பணிகளுக்காக ₹10 லட்சம் வரை மானியம்", kn: "ಶೈಕ್ಷಣಿಕ ಸಂಶೋಧನೆಗಾಗಿ ₹10 ಲಕ್ಷದವರೆಗೆ ಅನುದಾನ", ml: "ഗവേഷണ പദ്ധതികൾക്കായി ₹10 ലക്ഷം വരെയുള്ള സാമ്പത്തിക സഹായം" },
+        desc: { en: "Grants for in-service college faculty and university teachers to pursue academic research.", hi: "महाविद्यालयीन एवं विश्वविद्यालयी प्राध्यापकों के लिए शोध प्रोत्साहन अनुदान।", te: "కళాశాలలు మరియు విశ్వవిద్యాలయాల అధ్యాపకులకు పరిశోధనల కొరకు ఆర్థిక సహాయం.", ta: "கல்லூரி மற்றும் பல்கலைக்கழக பேராசிரியர்களுக்கான ஆராய்ச்சி உதவித்தொகை.", kn: "ಕಾಲೇಜು ಮತ್ತು ವಿಶ್ವವಿದ್ಯಾಲಯದ ಉಪನ್ಯಾಸಕರಿಗೆ ಶೈಕ್ಷಣಿಕ ಸಂಶೋಧನಾ ಅನುದಾನ.", ml: "അധ്യാപകർക്ക് ഉന്നത ഗവേഷണം നടത്തുന്നതിനുള്ള ധനസഹായം." },
+        image: "https://tse4.mm.bing.net/th/id/OIP.jVbV2D-OxZjiSwJOctBlGwHaE8?r=0&pid=Api&h=220&P=0",
+        applyUrl: "https://ugc.ac.in"
+      },
+
+      // 3. Healthcare (3 Schemes)
+      {
+        id: "pm-jay",
+        domainId: "health",
+        featured: true,
+        sector: { en: "Healthcare", hi: "स्वास्थ्य", te: "ఆరోగ్యం", ta: "சுகாதாரம்", kn: "ಆರೋಗ್ಯ", ml: "ആരോഗ്യം" },
+        name: { en: "Ayushman Bharat PM-JAY", hi: "आयुष्मान भारत पीएम-जेएवाई", te: "ఆయుష్మాన్ భారత్ పీఎం-జేఏవై", ta: "ஆயுஷ்மான் பாரத் திட்டம்", kn: "ಆಯುಷ್ಮಾನ್ ಭಾರತ್ ಯೋಜನೆ", ml: "ആയുഷ്മാൻ ഭാരത് പദ്ധതി" },
+        benefit: { en: "Cashless health cover up to ₹5 Lakh per family", hi: "प्रति परिवार ₹5 लाख तक का कैशलेस स्वास्थ्य कवर", te: "కుటుంబానికి ₹5 లక్షల వరకు ఉచిత ఆరోగ్య బీమా", ta: "குடும்பத்திற்கு ₹5 லட்சம் வரை இலவச மருத்துவ சிகிச்சை", kn: "ಪ್ರತಿ ಕುಟುಂಬಕ್ಕೆ ₹5 ಲಕ್ಷದವರೆಗೆ ಉಚಿತ ಚಿಕಿತ್ಸಾ ರಕ್ಷಣೆ", ml: "കുടുംബത്തിന് ₹5 ലക്ഷം വരെയുള്ള സൗജന്യ ചികിത്സ" },
+        desc: { en: "Free secondary and tertiary hospitalisation care for vulnerable families across network hospitals.", hi: "कम आय वाले परिवारों के लिए सरकारी एवं निजी अस्पतालों में मुफ्त इनडोर उपचार।", te: "పేద కుటుంబాలకు గుర్తింపు పొందిన ఆసుపత్రులలో ఉచిత నగదు రహిత చికిత్స.", ta: "எளிய குடும்பங்களுக்கான இலவச இரண்டாம் மற்றும் மூன்றாம் நிலை மருத்துவமனை சிகிச்சை.", kn: "ಕಡಿಮೆ ಆದಾಯದ ಕುಟುಂಬಗಳಿಗೆ ಸರ್ಕಾರಿ ಮತ್ತು ಖಾಸಗಿ ಆಸ್ಪತ್ರೆಗಳಲ್ಲಿ ಉಚಿತ ಒಳರೋಗಿ ಚಿಕಿತ್ಸೆ.", ml: "സാധാരണ കുടുംബങ്ങൾക്കായി സൗജന്യ ആശുപത്രി ചികിത്സാ പരിരക്ഷ." },
+        image: "https://img.republicworld.com/rimages/ayushmanbharat-170677652368916_9.webp",
+        applyUrl: "https://pmjay.gov.in"
+      },
+      {
+        id: "jan-aushadhi",
+        domainId: "health",
+        featured: false,
+        sector: { en: "Healthcare", hi: "स्वास्थ्य", te: "ఆరోగ్యం", ta: "சுகாதாரம்", kn: "ಆರೋಗ್ಯ", ml: "ആരോഗ്യം" },
+        name: { en: "Pradhan Mantri Jan Aushadhi (PMBJP)", hi: "प्रधानमंत्री जन औषधि योजना", te: "ప్రధాన మంత్రి భారతీయ జన ఔషధి పరియోజన", ta: "ஜன் ஔஷதி மலிவு விலை மருந்தகம்", kn: "ಜನೌಷಧಿ ಯೋಜನೆ", ml: "ജൻ ഔഷധി പദ്ധതി" },
+        benefit: { en: "Quality generic medicines at 50% to 90% discount", hi: "गुणवत्तापूर्ण जेनेरिक दवाएं 50% से 90% तक सस्ती दरों पर", te: "నాణ్యమైన జనరిక్ మందులు 50% నుండి 90% తక్కువ ధరకే లభ్యం", ta: "தரமான மருந்துகள் 50% முதல் 90% வரை குறைந்த விலையில்", kn: "ಶೇಕಡಾ 50 ರಿಂದ 90 ರಷ್ಟು ರಿಯಾಯಿತಿ ದರದಲ್ಲಿ ಔಷಧಿಗಳು", ml: "ഗുണനിലവാരമുള്ള മരുന്നുകൾ 50% മുതൽ 90% വരെ കുറഞ്ഞ വിലയിൽ" },
+        desc: { en: "Making quality generic medicines affordable and readily available for all citizens through dedicated outlets.", hi: "ब्रांडेड दवाओं की तुलना में अत्यंत सस्ती कीमत पर उच्च गुणवत्ता वाली दवाओं की उपलब्धता।", te: "సాధారణ ప్రజలకు నాణ్యమైన మందులను అత్యంత తక్కువ ధరలకు అందించే కేంద్రాలు.", ta: "அனைத்து மக்களுக்கும் மலிவு விலையில் அத்தியாவசிய மருந்துகளை வழங்கும் திட்டம்.", kn: "ಎಲ್ಲಾ ನಾಗರಿಕರಿಗೆ ಕೈಗೆಟುಕುವ ದರದಲ್ಲಿ ಉತ್ತಮ ಗುಣಮಟ್ಟದ ಜನರಿಕ್ ಔಷಧಿಗಳನ್ನು ಒದಗಿಸುವ ಕೇಂದ್ರಗಳು.", ml: "ജനങ്ങൾക്ക് കുറഞ്ഞ ചിലവിൽ മികച്ച മരുന്നുകൾ ലഭ്യമാക്കുന്ന ഔഷധ കേന്ദ്രങ്ങൾ." },
+        image: "https://www.gpvdspharma.com/wp-content/uploads/2024/08/Pradhan-Mantri-Jan-Aushadhi-Yojana.jpg",
+        applyUrl: "https://janaushadhi.gov.in"
+      },
+      {
+        id: "matru-vandana",
+        domainId: "health",
+        featured: false,
+        sector: { en: "Maternity", hi: "मातृ वंदना", te: "మాతృ సంక్షేమం", ta: "தாய்மை நலம்", kn: "ತಾಯಂದಿರ ಕಲ್ಯಾಣ", ml: "മാതൃക്ഷേമം" },
+        name: { en: "PM Matru Vandana Yojana (PMMVY)", hi: "प्रधानमंत्री मातृ वंदना योजना", te: "ప్రధాన మంత్రి మాతృ వందన యోజన", ta: "பிரதம மந்திரி மாத்ரு வந்தனா திட்டம்", kn: "ಮಾತೃ ವಂದನಾ ಯೋಜನೆ", ml: "മാതൃ വന്ദന യോജന" },
+        benefit: { en: "₹5,000 cash incentive for pregnant & lactating mothers", hi: "गर्भवती एवं धात्री महिलाओं को पोषण सहायता हेतु ₹5,000 नकद", te: "గర్భిణీలకు పౌష్టికాహారం కోసం ₹5,000 నేరుగా బ్యాంక్ ఖాతాలో జమ", ta: "கர்ப்பிணி பெண்களுக்கு ₹5,000 நேரடி நிதி உதவி", kn: "ಗರ್ಭಿಣಿ ಮತ್ತು ಹಾಲುಣಿಸುವ ತಾಯಂದಿರಿಗೆ ₹5,000 ಆರ್ಥಿಕ ನೆರವು", ml: "ഗർഭിണികൾക്ക് പോഷകാഹാരത്തിനായി ₹5,000 ധനസഹായം" },
+        desc: { en: "Direct benefit transfer to pregnant women and lactating mothers for health checkups and better nutrition.", hi: "पहले बच्चे के जन्म पर महिलाओं को स्वास्थ्य पोषण सुधारने हेतु तीन किस्तों में वित्तीय सहायता।", te: "గర్భిణీ స్త్రీలకు మెరుగైన ఆరోగ్యం మరియు పౌష్టికాహారం అందించే ఆర్థిక ప్రోత్సాహకం.", ta: "தாய் மற்றும் சிசுவின் ஊட்டச்சத்தை உறுதி செய்வதற்கான நிதி உதவி திட்டம்.", kn: "ತಾಯಿ ಮತ್ತು ಮಗುವಿನ ಉತ್ತಮ ಆರೋಗ್ಯ ಮತ್ತು ಪೌಷ್ಟಿಕಾಂಶಕ್ಕಾಗಿ ಸರ್ಕಾರದ ನೆರವು.", ml: "ഗർഭിണികളുടെയും നവജാതശിശുക്കളുടെയും ആരോഗ്യ സംരക്ഷണത്തിനായുള്ള പദ്ധതി." },
+        image: "https://media.banksathi.com/blog/images/qHqPpq9YmtXVA5XS2bqBBJRhoooJSoviyiUEmym3.png",
+        applyUrl: "https://pmmvy.wcd.gov.in"
+      },
+
+      // 4. Housing & Urban (3 Schemes)
+      {
+        id: "pm-awas",
+        domainId: "housing",
+        featured: true,
+        sector: { en: "Housing", hi: "आवास", te: "గృహ నిర్మాణం", ta: "வீட்டுவசதி", kn: "ವಸತಿ", ml: "ഭവനം" },
+        name: { en: "PM Awas Yojana (PMAY)", hi: "प्रधानमंत्री आवास योजना", te: "పీఎం ఆవాస్ యోజన", ta: "பிரதம மந்திரி ஆவாஸ் திட்டம்", kn: "ಪಿಎಂ ಆವಾಸ್ ಯೋಜನೆ", ml: "പി.എം ആവാസ് യോജന" },
+        benefit: { en: "Subsidy up to ₹2.67 Lakhs for pucca house construction", hi: "पक्के मकान के निर्माण के लिए ₹2.67 लाख तक की ब्याज सब्सिडी", te: "పక్కా ఇంటి నిర్మాణం కొరకు ₹2.67 లక్షల వరకు గృహ సబ్సిడీ", ta: "நிரந்தர வீடு கட்ட ₹2.67 லட்சம் வரை மானியம்", kn: "ಪಕ್ಕಾ ಮನೆ ನಿರ್ಮಾಣಕ್ಕೆ ₹2.67 ಲಕ್ಷದವರೆಗೆ ಸಬ್ಸಿಡಿ", ml: "സുരക്ഷിത വീട് നിർമ്മിക്കാൻ ₹2.67 ലക്ഷം വരെ സബ്‌സിഡി" },
+        desc: { en: "Ensuring pucca houses with basic amenities like water, sanitation, and power for eligible homeless families.", hi: "बेघर एवं कच्चे मकानों में रहने वाले सभी परिवारों को पक्का मकान उपलब्ध कराने की राष्ट्रव्यापी योजना।", te: "నిరుపేదలకు పక్కా ఇళ్లను నిర్మించి నీరు, విద్యుత్ వంటి కనీస వసతులు కల్పించే పథకం.", ta: "அனைத்து தகுதியான குடும்பங்களுக்கும் அடிப்படை வசதிகளுடன் கூடிய வீடு வழங்கும் திட்டம்.", kn: "ಎಲ್ಲಾ ಅರ್ಹ ವಸತಿ ರಹಿತ ಕುಟುಂಬಗಳಿಗೆ ಮೂಲ ಸೌಕರ್ಯಗಳಿರುವ ಪಕ್ಕಾ ಮನೆ ನಿರ್ಮಿಸುವ ಯೋಜನೆ.", ml: "ഭവനരഹിതരായ അർഹർക്ക് അടിസ്ഥാന സൗകര്യങ്ങളുള്ള സുരക്ഷിത വീടുകൾ നൽകുന്ന പദ്ധതി." },
+        image: "https://healthscalers.com/wp-content/uploads/2026/02/PM-Awas-Yojana-2026.jpg",
+        applyUrl: "https://pmaymis.gov.in"
+      },
+      {
+        id: "pm-svanidhi",
+        domainId: "housing",
+        featured: false,
+        sector: { en: "Urban Livelihood", hi: "शहरी आजीविका", te: "పట్టణ జీవనోపాధి", ta: "நகர்ப்புற வாழ்வாதாரம்", kn: "ನಗರ ಜೀವನೋಪಾಯ", ml: "നഗര ഉപജീവനം" },
+        name: { en: "PM SVANidhi Micro-Credit Scheme", hi: "पीएम स्वनिधि स्ट्रीट वेंडर ऋण योजना", te: "పీఎం స్వనిధి వీధి వ్యాపారుల రుణం", ta: "பிரதம மந்திரி ஸ்வாநிதி திட்டம்", kn: "ಪಿಎಂ ಸ್ವನಿಧಿ ಕಿರು ಸಾಲ ಯೋಜನೆ", ml: "പി.എം സ്വനിധി വായ്പാ പദ്ധതി" },
+        benefit: { en: "Collateral-free working capital loan up to ₹50,000", hi: "बिना गारंटी ₹50,000 तक का कार्यशील पूंजी ऋण एवं 7% ब्याज सब्सिडी", te: "పూచీకత్తు లేకుండా వీధి వ్యాపారులకు ₹50,000 వరకు వ్యాపార రుణం", ta: "பிணையமில்லா மூலதனக் கடன் ₹50,000 வரை 7% வட்டி மானியத்துடன்", kn: "ಯಾವುದೇ ಭದ್ರತೆ ಇಲ್ಲದೆ ₹50,000 ವರೆಗೆ ಬೀದಿ ಬದಿ ವ್ಯಾಪಾರಿ ಸಾಲ", ml: "ഈടില്ലാതെ തെരുവ് കച്ചവടക്കാർക്ക് ₹50,000 വരെ വായ്പ" },
+        desc: { en: "Affordable credit to street vendors to resume their businesses and promote digital transactions.", hi: "रेहड़ी-पटरी और छोटे दुकानदारों को कारोबार बढ़ाने हेतु रियायती ब्याज दर पर संस्थागत ऋण।", te: "చిరు వ్యాపారులు మరియు తోపుడు బండ్ల వారికి తక్కువ వడ్డీతో వర్కింగ్ క్యాపిటల్ లోన్లు.", ta: "சாலையோர வியாபாரிகள் தங்கள் தொழிலை மேம்படுத்த வழங்கப்படும் குறைந்த வட்டி கடன்.", kn: "ಬೀದಿ ಬದಿ ವ್ಯಾಪಾರಿಗಳಿಗೆ ಸುಲಭ ಕಂತುಗಳಲ್ಲಿ ಮರುಪಾವತಿಸಬಹುದಾದ ಬ್ಯಾಂಕ್ ಸಾಲ ಸೌಲಭ್ಯ.", ml: "ചെറുകിട തെരുവ് കച്ചവടക്കാർക്കായി ബാങ്കുകൾ വഴി ലഭ്യമാക്കുന്ന പ്രവർത്തന മൂലധന വായ്പ." },
+        image: "https://enterslice.com/learning/wp-content/uploads/2020/07/PM-SVANidhi-Micro-Credit-Scheme-for-Street-Vendors.jpg",
+        applyUrl: "https://pmsvanidhi.mohua.gov.in"
+      },
+      {
+        id: "pm-vishwakarma",
+        domainId: "housing",
+        featured: false,
+        sector: { en: "Skill & Credit", hi: "कौशल एवं ऋण", te: "చేతివృత్తులు & రుణం", ta: "கைவினைஞர் திட்டம்", kn: "ಕುಶಲಕರ್ಮಿ ಯೋಜನೆ", ml: "കരകൗശല പദ്ധതി" },
+        name: { en: "PM Vishwakarma Scheme", hi: "पीएम विश्वकर्मा योजना", te: "పీఎం విశ్వకర్మ పథకం", ta: "பிரதம மந்திரி விஸ்வகர்மா திட்டம்", kn: "ಪಿಎಂ ವಿಶ್ವಕರ್ಮ ಯೋಜನೆ", ml: "പി.എം വിശ്വകർമ യോജന" },
+        benefit: { en: "₹15,000 toolkit incentive + credit at 5% interest", hi: "₹15,000 टूलकिट अनुदान एवं 5% ब्याज पर ₹3 लाख तक का सस्ता ऋण", te: "ఉచితంగా ₹15,000 టూల్‌కిట్ గ్రాంట్ మరియు 5% వడ్డీతో ₹3 లక్షల రుణం", ta: "ரூ.15,000 உபகரண மானியம் மற்றும் 5% வட்டியில் கடன்", kn: "₹15,000 ಟೂಲ್‌ಕಿಟ್ ಪ್ರೋತ್ಸಾಹಧನ ಮತ್ತು ಶೇಕಡಾ 5 ರ ಬಡ್ಡಿಯಲ್ಲಿ ಸಾಲ", ml: "₹15,000 ടൂൾകിറ്റ് ഗ്രാൻ്റും 5% പലിശയിൽ വായ്പയും" },
+        desc: { en: "Holistic institutional support, skill training, toolkits, and low-cost credit for traditional artisans.", hi: "बढ़ई, लोहार, कुम्हार और पारम्परिक कारीगरों को आधुनिक उपकरण एवं ऋण सहायता।", te: "వడ్రంగి, కమ్మరి, కుమ్మరి వంటి 18 రకాల సాంప్రదాయ వృత్తుల వారికి నైపుణ్య శిక్షణ మరియు రుణాలు.", ta: "பாரம்பரிய கைவினைஞர்களுக்கு நவீன கருவிகள், பயிற்சி மற்றும் குறைந்த வட்டி கடன்.", kn: "ಸಾಂಪ್ರದಾಯಿಕ ಕುಶಲಕರ್ಮಿಗಳಿಗೆ ಕೌಶಲ್ಯ ತರಬೇತಿ ಮತ್ತು ರಿಯಾಯಿತಿ ಸಾಲ ನೆರವು.", ml: "പാരമ്പര്യ കരകൗശല തൊഴിലാളികൾക്ക് പരിശീലനവും കുറഞ്ഞ പലിശ നിരക്കിൽ വായ്പയും." },
+        image: "https://assets.thehansindia.com/h-upload/2023/09/17/1381508-pm-vishwakarma-scheme.jpg",
+        applyUrl: "https://pmvishwakarma.gov.in"
+      },
+
+      // 5. Family & Pension (4 Schemes)
+      {
+        id: "vatsalya",
+        domainId: "family",
+        featured: true,
+        sector: { en: "Family & Child", hi: "परिवार एवं बाल", te: "కుటుంబం & పిల్లలు", ta: "குடும்பம் & குழந்தை", kn: "ಕುಟುಂಬ ಮತ್ತು ಮಕ್ಕಳು", ml: "കുടുംബം & കുട്ടി" },
+        name: { en: "NPS Vatsalya Scheme", hi: "एनपीएस वात्सल्य योजना", te: "ఎన్‌పీఎస్ వాత్సల్య పథకం", ta: "என்.பி.எஸ் வாத்சல்யா திட்டம்", kn: "ಎನ್‌ಪಿಎಸ್ ವಾತ್ಸಲ್ಯ ಯೋಜನೆ", ml: "എൻ.പി.എസ് വാത്സല്യ പദ്ധതി" },
+        benefit: { en: "Wealth accumulation & pension for minors", hi: "नाबालिग बच्चों के भविष्य के लिए पेंशन एवं वित्तीय सुरक्षा", te: "మైనర్ పిల్లల భవిష్యత్తు కొరకు పింఛను మరియు దీర్ఘకాలిక పొదుపు", ta: "குழந்தைகளின் எதிர்காலத்திற்கான ஓய்வூதியம் மற்றும் சேமிப்பு", kn: "ಮಕ್ಕಳ ಭವಿಷ್ಯಕ್ಕಾಗಿ ಉಳಿತಾಯ ಮತ್ತು ಪಿಂಚಣಿ ಭದ್ರತೆ", ml: "കുട്ടികളുടെ ഭാവിക്കായി പെൻഷനും സാമ്പത്തിക സുരക്ഷയും" },
+        desc: { en: "Open investment-backed pension accounts for minors with flexible annual contributions.", hi: "अभिभावकों द्वारा नाबालिग बच्चों के नाम पर बचत खाता खोलकर भविष्य सुरक्षित करने की योजना।", te: "తల్లిదండ్రులు పిల్లల పేరిట ఖాతా తెరిచి భవిష్యత్తు కోసం పింఛను నిధిని సమకూర్చే పథకం.", ta: "குறைந்த முதலீட்டில் குழந்தைகளின் பெயரில் எதிர்கால ஓய்வூதிய கணக்கு.", kn: "ಕನಿಷ್ಠ ಹೂಡಿಕೆಯೊಂದಿಗೆ ಮಕ್ಕಳ ಹೆಸರಿನಲ್ಲಿ ದೀರ್ಘಕಾಲೀನ ಪಿಂಚಣಿ ಖಾತೆ.", ml: "കുറഞ്ഞ നിക്ഷേപത്തിൽ കുട്ടികളുടെ പേരിൽ പെൻഷൻ അക്കൗണ്ട് ആരംഭിക്കാം." },
+        image: "https://govtschemesinfo.blog/wp-content/uploads/2025/10/NPS-Vatsalya-Scheme_-Financial-security-for-children-1024x683.png",
+        applyUrl: "https://www.myscheme.gov.in"
+      },
+      {
+        id: "atal-pension",
+        domainId: "family",
+        featured: false,
+        sector: { en: "Pension", hi: "पेंशन योजना", te: "పెన్షన్", ta: "ஓய்வூதியம்", kn: "ಪಿಂಚಣಿ", ml: "പെൻഷൻ" },
+        name: { en: "Atal Pension Yojana (APY)", hi: "अटल पेंशन योजना", te: "అటల్ పెన్షన్ యోజన", ta: "அடல் ஓய்வூதியத் திட்டம்", kn: "ಅಟಲ್ ಪಿಂಚಣಿ ಯೋಜನೆ", ml: "അടൽ പെൻഷൻ യോജന" },
+        benefit: { en: "Guaranteed monthly lifelong pension up to ₹5,000/month after age 60", hi: "60 वर्ष की आयु के बाद ₹1,000 से ₹5,000 तक की आजीवन मासिक पेंशन", te: "60 ఏళ్ల తర్వాత నెలకు ₹1,000 నుండి ₹5,000 వరకు జీవితాంతం పెన్షన్", ta: "60 வயதிற்குப் பிறகு மாதம் ₹5,000 வரை உத்தரவாத ஓய்வூதியம்", kn: "60 ವರ್ಷಗಳ ನಂತರ ಮಾಸಿಕ ₹1,000 ದಿಂದ ₹5,000 ವರೆಗೆ ಖಾತರಿಯ ಪಿಂಚಣಿ", ml: "60 വയസ്സിന് ശേഷം പ്രതിമാസം ₹5,000 വരെ ആജീവനാന്ത പെൻഷൻ" },
+        desc: { en: "Universal social security scheme targeted at unorganized sector workers with assured monthly returns.", hi: "असंगठित क्षेत्र के सभी नागरिकों के लिए भारत सरकार द्वारा समर्थित गारंटीकृत पेंशन।", te: "అసంఘటిత రంగ కార్మికులు వృద్ధాప్యంలో గౌరవంగా జీవించడానికి భరోసానిచ్చే పింఛను పథకం.", ta: "முறைசாரா தொழிலாளர்களுக்கான குறைந்த கட்டண உத்தரவாத ஓய்வூதியத் திட்டம்.", kn: "ಅಸಂಘಟಿತ ವಲಯದ ಕಾರ್ಮಿಕರ ವೃದ್ಧಾಪ್ಯ ಭದ್ರತೆಗಾಗಿ ಸರ್ಕಾರದ ಖಾತರಿಯುಳ್ಳ ಪಿಂಚಣಿ ಯೋಜನೆ.", ml: "അസംഘടിത മേഖലയിലെ തൊഴിലാളികൾക്കായി സർക്കാർ ഉറപ്പുനൽകുന്ന പെൻഷൻ പദ്ധതി." },
+        image: "https://i.pinimg.com/originals/b8/9e/fd/b89efd263574097b0a51cb4e89c7a515.jpg",
+        applyUrl: "https://www.npscra.nsdl.co.in"
+      },
+      {
+        id: "old-age-pension",
+        domainId: "family",
+        featured: false,
+        sector: { en: "Senior Citizen", hi: "वृद्धावस्था पेंशन", te: "వృద్ధాప్య పింఛను", ta: "முதியோர் ஓய்வூதியம்", kn: "ವೃದ್ಧಾಪ್ಯ ವೇತನ", ml: "വാർദ്ധക്യ പെൻഷൻ" },
+        name: { en: "IGNOAPS Senior Pension", hi: "इंदिरा गांधी राष्ट्रीय वृद्धावस्था पेंशन", te: "ఇందిరా గాంధీ జాతీయ వృద్ధాప్య పింఛను", ta: "தேசிய முதியோர் ஓய்வூதியத் திட்டம்", kn: "ರಾಷ್ಟ್ರೀಯ ವೃದ್ಧಾಪ್ಯ ವೇತನ ಯೋಜನೆ", ml: "ദേശീയ വാർദ്ധക്യകാല പെൻഷൻ" },
+        benefit: { en: "Monthly direct financial pension for BPL seniors (60+ yrs)", hi: "60 वर्ष से अधिक आयु के बीपीएल वरिष्ठ नागरिकों को मासिक नकद पेंशन", te: "60 ఏళ్లు పైబడిన నిరుపేద వృద్ధులకు ప్రతి నెలా గౌరవ పింఛను సహాయం", ta: "60 வயதுக்கு மேற்பட்ட முதியோர்களுக்கு மாதாந்திர ஓய்வூதியம்", kn: "60 ವರ್ಷ ಮೀರಿದ ಹಿರಿಯ ನಾಗರಿಕರಿಗೆ ಮಾಸಿಕ ಪಿಂಚಣಿ ನೆರವು", ml: "60 വയസ്സിന് മുകളിലുള്ള ബി.പി.എൽ മുതിർന്ന പൗരന്മാർക്ക് പ്രതിമാസ പെൻഷൻ" },
+        desc: { en: "Monthly direct cash pension to elders belonging to below poverty line households.", hi: "गरीबी रेखा से नीचे जीवनयापन करने वाले वृद्धजनों के लिए सामाजिक सुरक्षा पेंशन सहायता।", te: "ఆర్థిక స్తోమత లేని వృద్ధులకు జీవన భృతి కల్పించేందుకు ప్రభుత్వం అందించే నెలవారీ పింఛను.", ta: "வறுமைக்கோட்டிற்கு கீழ் உள்ள முதியோரின் வாழ்வாதாரத்திற்கான மாதாந்திர ஓய்வூதிய திட்டம்.", kn: "ಬಡತನ ರೇಖೆಗಿಂತ ಕೆಳಗಿರುವ ಹಿರಿಯ ನಾಗರಿಕರಿಗೆ ಬದುಕಿನ ನೆರವಿಗಾಗಿ ಮಾಸಿಕ ವೇತನ.", ml: "സാമ്പത്തികമായി പിന്നാക്കം നിൽക്കുന്ന മുതിർന്ന പൗരന്മാർക്കുള്ള ജീവനാംശ പെൻഷൻ." },
+        image: "https://govtschemeonline.com/wp-content/uploads/2024/10/Design-4.jpeg",
+        applyUrl: "https://nsap.nic.in"
+      },
+      {
+        id: "sukanya-samriddhi",
+        domainId: "family",
+        featured: false,
+        sector: { en: "Girl Child Welfare", hi: "बालिका कल्याण", te: "బాలికా సంక్షేమం", ta: "பெண் குழந்தை சேமிப்பு", kn: "ಹೆಣ್ಣು ಮಗುವಿನ ಯೋಜನೆ", ml: "പെൺകുട്ടി സമ്പാദ്യ പദ്ധതി" },
+        name: { en: "Sukanya Samriddhi Yojana (SSY)", hi: "सुकन्या समृद्धि योजना", te: "సుకున్య సమృద్ధి యోజన", ta: "சுகன்யா சம்ரிதி திட்டம்", kn: "ಸುಕನ್ಯಾ ಸಮೃದ್ಧಿ ಯೋಜನೆ", ml: "സുകന്യ സമൃദ്ധി യോജന" },
+        benefit: { en: "High interest (8.2%+) small savings account for girl children", hi: "बालिकाओं के लिए 8.2%+ ब्याज एवं आयकर छूट वाली बचत योजना", te: "ఆడపిల్లల భవిష్యత్తు కోసం 8.2%+ అత్యధిక వడ్డీతో ప్రభుత్వ పొదుపు ఖాతా", ta: "பெண் குழந்தைகளுக்கான 8.2%+ உயர் வட்டி சேமிப்பு திட்டம்", kn: "ಹೆಣ್ಣು ಮಕ್ಕಳಿಗಾಗಿ ಶೇಕಡಾ 8.2 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ಬಡ್ಡಿ ನೀಡುವ ಉಳಿತಾಯ ಯೋಜನೆ", ml: "പെൺകുട്ടികൾക്കായി 8.2%+ ഉയർന്ന പലിശ നൽകുന്ന സമ്പാദ്യ പദ്ധതി" },
+        desc: { en: "Government-backed savings scheme targeted at parents of female children to fund education and marriage.", hi: "बेटियों की उच्च शिक्षा एवं विवाह के लिए बैंक अथवा डाकघर में खोला जाने वाला विशेष खाता।", te: "ఆడపిల్లల చదువు మరియు పెళ్లి ఖర్చుల కోసం పోస్టాఫీస్ లేదా బ్యాంకుల్లో ప్రారంభించే పొదుపు పథకం.", ta: "பெண் குழந்தைகளின் கல்வி மற்றும் திருமண தேவைகளுக்காக அஞ்சலகம் மூலம் செயல்படுத்தப்படும் திட்டம்.", kn: "ಹೆಣ್ಣು ಮಕ್ಕಳ ಉನ್ನತ ವ್ಯಾಸಂಗ ಮತ್ತು ಮದುವೆ ವೆಚ್ಚಗಳಿಗೆ ನೆರವಾಗುವ ಅಂಚೆ ಕಚೇರಿ ಉಳಿತಾಯ ಖಾತೆ.", ml: "പെൺകുട്ടികളുടെ ഉന്നത വിദ്യാഭ്യാസത്തിനും വിവാഹത്തിനുമായി പോസ്റ്റ് ഓഫീസ് വഴി നടത്തുന്ന നിക്ഷേപം." },
+        image: "https://tse3.mm.bing.net/th/id/OIP.M6Lvtj2ojfzWEorBeH20nAHaEK?r=0&pid=Api&h=220&P=0",
+        applyUrl: "https://www.myscheme.gov.in/schemes/ssy"
+      }
+    ];
+
+    function renderUI() {
+      const u = UI_STRINGS[activeLang] || UI_STRINGS.en;
+
+      // 1. Text & Navbar Updates
+      const titleEl = document.getElementById("lblDomainsTitle");
+      if (titleEl) titleEl.innerText = u.domainsTitle;
+
+      const deskLink = document.getElementById("btnDeskLink");
+      if (deskLink) deskLink.innerText = u.deskBtn;
+
+      // 2. Sign In button state
+      const session = localStorage.getItem("sevasetu_user");
+      const btnAuth = document.getElementById("btnSignInModal");
+      if (btnAuth) {
+        if (session) {
+          const parsed = JSON.parse(session);
+          btnAuth.innerHTML = `${(parsed.name || "User").split(" ")[0]} 🚪`;
+          btnAuth.onclick = () => {
+            localStorage.removeItem("sevasetu_user");
+            window.location.reload();
+          };
+        } else {
+          btnAuth.innerHTML = `<span id="lblSignIn">${u.signIn}</span> →`;
+          btnAuth.onclick = () => openAuthModal('login');
+        }
+      }
+
+      // 3. Render Hero Slider
+      const featured = SCHEMES_DATA.filter(s => s.featured);
+      const slidesWrapper = document.getElementById("slidesWrapper");
+      if (slidesWrapper) {
+        slidesWrapper.innerHTML = featured.map((scheme, index) => `
+          <div class="slide-item ${index === currentSlide ? 'active' : ''}">
+            <div class="slide-bg" style="background-image: url('${scheme.image}')"></div>
+            <div class="slide-overlay"></div>
+            <div class="slide-content">
+              <span class="scheme-tag">${scheme.sector[activeLang] || scheme.sector.en}</span>
+              <h1 class="scheme-title">${scheme.name[activeLang] || scheme.name.en}</h1>
+              <p class="scheme-benefit">✓ ${scheme.benefit[activeLang] || scheme.benefit.en}</p>
+              <p class="scheme-desc">${scheme.desc[activeLang] || scheme.desc.en}</p>
+              <a href="${scheme.applyUrl}" target="_blank" rel="noopener noreferrer" class="btn-apply">
+                ${u.applyBtn}
+              </a>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // 4. Render Domain Buttons
+      const domainsRow = document.getElementById("domainsRow");
+      if (domainsRow) {
+        domainsRow.innerHTML = DOMAINS.map(domain => `
+          <button class="domain-btn ${activeDomainId === domain.id ? 'active' : ''}" 
+                  onclick="switchDomain('${domain.id}')">
+            ${domain.name[activeLang] || domain.name.en}
+          </button>
+        `).join('');
+      }
+
+      // 5. Render Cards
+      renderDomainCards();
+    }
+
+    function renderDomainCards() {
+      const u = UI_STRINGS[activeLang] || UI_STRINGS.en;
+      const cardsGrid = document.getElementById("cardsGrid");
+      if (!cardsGrid) return;
+
+      const filtered = activeDomainId === "all" 
+        ? SCHEMES_DATA 
+        : SCHEMES_DATA.filter(s => s.domainId === activeDomainId);
+
+      if (filtered.length === 0) {
+        cardsGrid.innerHTML = `<div class="empty-state">${u.noSchemes}</div>`;
+        return;
+      }
+
+      cardsGrid.innerHTML = filtered.map(scheme => `
+        <div class="scheme-card">
+          <img src="${scheme.image}" alt="scheme" class="card-thumb" loading="lazy">
+          <div class="card-body">
+            <div>
+              <span class="card-category">${scheme.sector[activeLang] || scheme.sector.en}</span>
+              <h3 class="card-title">${scheme.name[activeLang] || scheme.name.en}</h3>
+              <p class="card-benefit">${scheme.benefit[activeLang] || scheme.benefit.en}</p>
+            </div>
+            <a href="${scheme.applyUrl}" target="_blank" rel="noopener noreferrer" class="card-btn">
+              ${u.applyBtn}
+            </a>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function switchDomain(domainId) {
+      activeDomainId = domainId;
+      renderUI();
+    }
+
+    function nextSlide() {
+      const count = SCHEMES_DATA.filter(s => s.featured).length;
+      currentSlide = (currentSlide + 1) % count;
+      renderUI();
+      resetAutoplay();
+    }
+    function prevSlide() {
+      const count = SCHEMES_DATA.filter(s => s.featured).length;
+      currentSlide = (currentSlide - 1 + count) % count;
+      renderUI();
+      resetAutoplay();
+    }
+    function resetAutoplay() {
+      clearInterval(autoPlayTimer);
+      autoPlayTimer = setInterval(nextSlide, 5000);
+    }
+
+    function switchLanguage(langCode) {
+      activeLang = langCode;
+      localStorage.setItem("sevasetu_lang", langCode);
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-lang') === langCode);
+      });
+      renderUI();
+    }
+
+    function openAuthModal(mode) {
+      authMode = mode;
+      document.getElementById("authError").style.display = "none";
+      document.getElementById("authModal").style.display = "flex";
+    }
+
+    function closeAuthModal() {
+      document.getElementById("authModal").style.display = "none";
+    }
+
+    function toggleAuthMode() {
+      authMode = (authMode === "login") ? "signup" : "login";
+      const u = UI_STRINGS[activeLang] || UI_STRINGS.en;
+      document.getElementById("modalTitle").innerText = (authMode === "login") ? u.modalLoginTitle : u.modalSignUpTitle;
+      document.getElementById("groupName").style.display = (authMode === "login") ? "none" : "block";
+      document.getElementById("btnSubmitAuth").innerText = (authMode === "login") ? u.btnProceed : u.btnRegister;
+    }
+
+    function handleAuthSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById("inputEmail").value;
+      const name = document.getElementById("inputName").value || email.split("@")[0];
+      const role = document.getElementById("selectRole").value;
+
+      localStorage.setItem("sevasetu_user", JSON.stringify({
+        email: email,
+        name: name,
+        role: role,
+        lang: activeLang
+      }));
+
+      closeAuthModal();
+      renderUI();
+    }
+
+    // Clean, robust initialization
+    window.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-lang') === activeLang);
+      });
+      renderUI();
+      resetAutoplay();
+    });
+  </script>
+</body>
+</html>
